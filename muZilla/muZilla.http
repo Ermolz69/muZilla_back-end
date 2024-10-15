@@ -1,0 +1,6 @@
+@muZilla_HostAddress = http://localhost:5159
+
+GET {{muZilla_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
