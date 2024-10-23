@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using muZilla.Data;
 
@@ -11,9 +12,11 @@ using muZilla.Data;
 namespace muZilla.Migrations
 {
     [DbContext(typeof(MuzillaDbContext))]
-    partial class MuzillaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241015143547_DomainColorImageTypeChange")]
+    partial class DomainColorImageTypeChange
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -198,9 +201,6 @@ namespace muZilla.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CoverId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -212,6 +212,9 @@ namespace muZilla.Migrations
                     b.Property<bool>("HasExplicitLyrics")
                         .HasColumnType("bit");
 
+                    b.Property<int>("ImageId")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsBanned")
                         .HasColumnType("bit");
 
@@ -221,7 +224,16 @@ namespace muZilla.Migrations
                     b.Property<int>("Likes")
                         .HasColumnType("int");
 
+                    b.Property<int>("LyricsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MusicFileId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("OriginalId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OriginalId1")
                         .HasColumnType("int");
 
                     b.Property<bool>("RemixesAllowed")
@@ -236,9 +248,11 @@ namespace muZilla.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CoverId");
+                    b.HasIndex("ImageId");
 
                     b.HasIndex("OriginalId");
+
+                    b.HasIndex("OriginalId1");
 
                     b.ToTable("Songs");
                 });
@@ -389,13 +403,19 @@ namespace muZilla.Migrations
                 {
                     b.HasOne("muZilla.Models.Image", "Cover")
                         .WithMany()
-                        .HasForeignKey("CoverId")
+                        .HasForeignKey("ImageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("muZilla.Models.Song", null)
+                        .WithMany()
+                        .HasForeignKey("OriginalId");
+
                     b.HasOne("muZilla.Models.Song", "Original")
                         .WithMany("Remixes")
-                        .HasForeignKey("OriginalId");
+                        .HasForeignKey("OriginalId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Cover");
 

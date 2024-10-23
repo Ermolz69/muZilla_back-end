@@ -71,13 +71,7 @@ namespace muZilla.Data
                 .WithMany(s => s.Remixes)
                 .HasForeignKey(s => s.OriginalId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
-
-            modelBuilder.Entity<Song>()
-                .HasOne<Song>()
-                .WithMany()
-                .HasForeignKey(s => s.OriginalId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
-
+            
             modelBuilder.Entity<Collection>()
                 .HasOne(c => c.Author)
                 .WithMany()

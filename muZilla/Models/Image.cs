@@ -4,6 +4,6 @@
     {
         public int Id { get; set; }
         public string ImageFilePath { get; set; }
-        public int DomainColor { get; set; }
+        public string DomainColor { get; set; }
     }
 }

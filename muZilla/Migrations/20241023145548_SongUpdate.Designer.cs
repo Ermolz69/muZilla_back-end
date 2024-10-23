@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using muZilla.Data;
 
@@ -11,9 +12,11 @@ using muZilla.Data;
 namespace muZilla.Migrations
 {
     [DbContext(typeof(MuzillaDbContext))]
-    partial class MuzillaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241023145548_SongUpdate")]
+    partial class SongUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -224,6 +227,9 @@ namespace muZilla.Migrations
                     b.Property<int?>("OriginalId")
                         .HasColumnType("int");
 
+                    b.Property<int>("OriginalId1")
+                        .HasColumnType("int");
+
                     b.Property<bool>("RemixesAllowed")
                         .HasColumnType("bit");
 
@@ -239,6 +245,8 @@ namespace muZilla.Migrations
                     b.HasIndex("CoverId");
 
                     b.HasIndex("OriginalId");
+
+                    b.HasIndex("OriginalId1");
 
                     b.ToTable("Songs");
                 });
@@ -393,9 +401,15 @@ namespace muZilla.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("muZilla.Models.Song", null)
+                        .WithMany()
+                        .HasForeignKey("OriginalId");
+
                     b.HasOne("muZilla.Models.Song", "Original")
                         .WithMany("Remixes")
-                        .HasForeignKey("OriginalId");
+                        .HasForeignKey("OriginalId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Cover");
 
