@@ -38,6 +38,7 @@ namespace muZilla.Services
                 Cover = await _context.Images.FindAsync(songDTO.ImageId),
             };
 
+
             song.Authors = new List<User>();
             foreach (int i in songDTO.AuthorIds)
                 song.Authors
