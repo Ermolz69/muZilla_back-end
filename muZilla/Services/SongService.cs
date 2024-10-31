@@ -70,7 +70,7 @@ namespace muZilla.Services
             await _context.SaveChangesAsync();
             int id = _context.Songs.OrderBy(s => s.Id).LastOrDefault().Id;
             return id;
-        }
+        } 
 
         public async Task<Song> GetSongByIdAsync(int id)
         {
