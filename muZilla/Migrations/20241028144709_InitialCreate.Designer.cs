@@ -12,8 +12,8 @@ using muZilla.Data;
 namespace muZilla.Migrations
 {
     [DbContext(typeof(MuzillaDbContext))]
-    [Migration("20241023151634_SongOriginalFixUpdate")]
-    partial class SongOriginalFixUpdate
+    [Migration("20241028144709_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

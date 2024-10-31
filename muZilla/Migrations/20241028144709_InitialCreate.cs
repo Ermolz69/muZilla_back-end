@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace muZilla.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,7 +36,7 @@ namespace muZilla.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ImageFilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DomainColor = table.Column<int>(type: "int", nullable: false)
+                    DomainColor = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -51,8 +51,6 @@ namespace muZilla.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MusicFileId = table.Column<int>(type: "int", nullable: false),
-                    LyricsId = table.Column<int>(type: "int", nullable: false),
                     Length = table.Column<int>(type: "int", nullable: false),
                     Genres = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     RemixesAllowed = table.Column<bool>(type: "bit", nullable: false),
@@ -61,15 +59,14 @@ namespace muZilla.Migrations
                     IsBanned = table.Column<bool>(type: "bit", nullable: false),
                     Likes = table.Column<int>(type: "int", nullable: false),
                     Views = table.Column<int>(type: "int", nullable: false),
-                    ImageId = table.Column<int>(type: "int", nullable: false),
-                    OriginalId1 = table.Column<int>(type: "int", nullable: false)
+                    CoverId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Songs", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Songs_Images_ImageId",
-                        column: x => x.ImageId,
+                        name: "FK_Songs_Images_CoverId",
+                        column: x => x.CoverId,
                         principalTable: "Images",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -77,14 +74,7 @@ namespace muZilla.Migrations
                         name: "FK_Songs_Songs_OriginalId",
                         column: x => x.OriginalId,
                         principalTable: "Songs",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Songs_Songs_OriginalId1",
-                        column: x => x.OriginalId1,
-                        principalTable: "Songs",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -294,19 +284,14 @@ namespace muZilla.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Songs_ImageId",
+                name: "IX_Songs_CoverId",
                 table: "Songs",
-                column: "ImageId");
+                column: "CoverId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Songs_OriginalId",
                 table: "Songs",
                 column: "OriginalId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Songs_OriginalId1",
-                table: "Songs",
-                column: "OriginalId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_AccessLevelId",

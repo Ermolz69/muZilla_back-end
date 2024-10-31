@@ -99,13 +99,32 @@ namespace muZilla.Controllers
         }
 
         [HttpGet("download")]
-        public async Task<IActionResult> DownloadProfilePicture(string login, string filename)
+        public async Task<IActionResult> DownloadFile(string login, string filename)
         {
             try
             {
                 byte[] fileBytes = await _fileStorageService.ReadFileAsync(login, filename);
 
                 return File(fileBytes, "application/octet-stream", filename);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpGet("downloadfromsong")]
+        public async Task<IActionResult> DownloadFileFromSong(string login, int songId, string filename)
+        {
+            try
+            {
+                byte[]? fileBytes = await _fileStorageService.ReadFileFromSongAsync(login, songId, filename);
+
+                if (fileBytes != null)
+                {
+                    return File(fileBytes, "application/octet-stream", filename);
+                }
+                return BadRequest("No file is in directory.");
             }
             catch (Exception ex)
             {

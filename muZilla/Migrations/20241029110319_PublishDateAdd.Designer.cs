@@ -12,8 +12,8 @@ using muZilla.Data;
 namespace muZilla.Migrations
 {
     [DbContext(typeof(MuzillaDbContext))]
-    [Migration("20241014111615_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20241029110319_PublishDateAdd")]
+    partial class PublishDateAdd
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -180,8 +180,9 @@ namespace muZilla.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("DomainColor")
-                        .HasColumnType("int");
+                    b.Property<string>("DomainColor")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImageFilePath")
                         .IsRequired()
@@ -200,6 +201,9 @@ namespace muZilla.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CoverId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -211,9 +215,6 @@ namespace muZilla.Migrations
                     b.Property<bool>("HasExplicitLyrics")
                         .HasColumnType("bit");
 
-                    b.Property<int>("ImageId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsBanned")
                         .HasColumnType("bit");
 
@@ -223,17 +224,11 @@ namespace muZilla.Migrations
                     b.Property<int>("Likes")
                         .HasColumnType("int");
 
-                    b.Property<int>("LyricsId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MusicFileId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("OriginalId")
                         .HasColumnType("int");
 
-                    b.Property<int>("OriginalId1")
-                        .HasColumnType("int");
+                    b.Property<DateTime>("PublishDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("RemixesAllowed")
                         .HasColumnType("bit");
@@ -247,11 +242,9 @@ namespace muZilla.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ImageId");
+                    b.HasIndex("CoverId");
 
                     b.HasIndex("OriginalId");
-
-                    b.HasIndex("OriginalId1");
 
                     b.ToTable("Songs");
                 });
@@ -402,19 +395,13 @@ namespace muZilla.Migrations
                 {
                     b.HasOne("muZilla.Models.Image", "Cover")
                         .WithMany()
-                        .HasForeignKey("ImageId")
+                        .HasForeignKey("CoverId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("muZilla.Models.Song", null)
-                        .WithMany()
-                        .HasForeignKey("OriginalId");
 
                     b.HasOne("muZilla.Models.Song", "Original")
                         .WithMany("Remixes")
-                        .HasForeignKey("OriginalId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("OriginalId");
 
                     b.Navigation("Cover");
 

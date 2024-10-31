@@ -224,6 +224,9 @@ namespace muZilla.Migrations
                     b.Property<int?>("OriginalId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("PublishDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("RemixesAllowed")
                         .HasColumnType("bit");
 
@@ -277,6 +280,9 @@ namespace muZilla.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ProfilePictureId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PublicId")
                         .HasColumnType("int");
 
                     b.Property<bool>("ReceiveNotifications")

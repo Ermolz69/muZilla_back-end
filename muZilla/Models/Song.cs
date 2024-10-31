@@ -8,6 +8,7 @@
         public int Length { get; set; }
         public string Genres { get; set; }
         public bool RemixesAllowed { get; set; }
+        public DateTime PublishDate { get; set; }
         public int? OriginalId { get; set; }
         public bool HasExplicitLyrics { get; set; }
         public bool IsBanned { get; set; }

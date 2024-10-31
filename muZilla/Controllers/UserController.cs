@@ -60,21 +60,30 @@ namespace muZilla.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> RegisterUserFullyAsync(UserDTO userDTO)
+        public async Task<IActionResult> RegisterUserFullyAsync([FromForm] UserDTO userDTO, [FromForm] IFormFile? profile)
         {
             int access_id = await _accessLevelService.CreateDefaultAccessLevelAsync();
 
             byte[] fileBytes;
 
-            var rootPath = Directory.GetCurrentDirectory();
-            var filePath = Path.Combine(rootPath, "DefaultPictures", "default.png");
-
-            if (!System.IO.File.Exists(filePath))
+            if (profile == null)
             {
-                return NotFound("Default image not found.");
-            }
+                var rootPath = Directory.GetCurrentDirectory();
+                var filePath = Path.Combine(rootPath, "DefaultPictures", "default.png");
 
-            fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+                if (!System.IO.File.Exists(filePath))
+                {
+                    return NotFound("Default image not found.");
+                }
+
+                fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            }
+            else
+            {
+                using var memoryStream = new MemoryStream();
+                await profile.CopyToAsync(memoryStream);
+                fileBytes = memoryStream.ToArray();
+            }
 
             await _fileStorageService.CreateFileInDirectoryAsync(userDTO.Login, "pic.png", fileBytes);
             await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = userDTO.Login + "/pic.png", DomainColor = "69,1939,69" });

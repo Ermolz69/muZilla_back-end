@@ -38,6 +38,8 @@ namespace muZilla.Services
         {
             if (IsUserValid(userDTO))
             {
+
+
                 User user = new User()
                 {
                     Username = userDTO.Username,
@@ -48,6 +50,7 @@ namespace muZilla.Services
                     DateOfBirth = userDTO.DateOfBirth,
                     ReceiveNotifications = userDTO.ReceiveNotifications,
                     IsBanned = false,
+                    PublicId = GetPublicIdUnique(),
                     TwoFactoredAuthentification = false,
                     AccessLevel = await _context.AccessLevels.FindAsync(userDTO.AccessLevelId),
                     ProfilePicture = await _context.Images.FindAsync(userDTO.ProfilePictureId)
@@ -56,6 +59,18 @@ namespace muZilla.Services
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public int GetPublicIdUnique()
+        {
+            Random rand = new Random();
+            int id = 0;
+            do
+            {
+                id = rand.Next(10000000, 99999999);
+                
+            } while (_context.Users.Select(u => u.PublicId).Contains(id));
+            return id;
         }
 
         public async Task<User> GetUserByIdAsync(int id)

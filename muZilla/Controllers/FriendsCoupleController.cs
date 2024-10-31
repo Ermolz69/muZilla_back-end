@@ -78,5 +78,26 @@ namespace muZilla.Controllers
         {
             return await _friendsCoupleService.GetFriendsById(id);
         }
+
+        [HttpPost("createinvitelink")]
+        public async Task<IActionResult> CreateInviteLink(int userId)
+        {
+            await _friendsCoupleService.CreateInviteLink(userId);
+            return Ok();
+        }
+
+        [HttpGet("gotolink")]
+        public async Task<IActionResult> GoToLink(int userId, string link)
+        {
+            int? id = await _friendsCoupleService.GetUserIdByLinkValueAsync(link);
+            if (id != null)
+            {
+                int req_id = id.Value;
+                await _friendsCoupleService.DeleteLinkByUserIdAsync(req_id);
+                await _friendsCoupleService.CreateFriendsCouple(req_id, userId);
+                return Ok();
+            }
+            return BadRequest();
+        }
     }
 }

@@ -64,6 +64,31 @@ namespace muZilla.Services
             }
         }
 
+        public async Task<byte[]?> ReadFileFromSongAsync(string login, int songId, string filename)
+        {
+            ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(login);
+
+            ShareDirectoryClient subdirClient = directoryClient.GetSubdirectoryClient(songId.ToString());
+
+            ShareFileClient fileClient = subdirClient.GetFileClient(filename);
+
+            try
+            {
+                ShareFileDownloadInfo download = await fileClient.DownloadAsync();
+
+                using (MemoryStream memoryStream = new MemoryStream())
+                {
+                    await download.Content.CopyToAsync(memoryStream);
+
+                    return memoryStream.ToArray();
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public async Task CreateSongDirectoryInDirectoryAsync(string login, int songId)
         {
             ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(login);
