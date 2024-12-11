@@ -20,6 +20,7 @@ namespace muZilla.Controllers
         {
             if (!ModelState.IsValid)
             {
+                Console.WriteLine("BAD REQUEST!");
                 return BadRequest(ModelState);
             }
 

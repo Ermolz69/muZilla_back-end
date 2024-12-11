@@ -70,16 +70,27 @@ namespace muZilla.Services
             await _context.SaveChangesAsync();
             int id = _context.Songs.OrderBy(s => s.Id).LastOrDefault().Id;
             return id;
-        } 
+        }
 
         public async Task<Song> GetSongByIdAsync(int id)
         {
-            Song song = await _context.Songs
-                .Include(s => s.Cover)
-                .Include(s => s.Authors)
+            var song = await _context.Songs
+                .Include(s => s.Remixes)
                 .FirstOrDefaultAsync(s => s.Id == id);
-            foreach (var xs in _context.Songs.Select(s => s).Where(s => s.OriginalId == song.Id).ToList())
-                song.Remixes.Add(xs);
+
+            if (song == null)
+            {
+                return null;
+            }
+
+            var remixes = await _context.Songs
+                .Where(s => s.Original != null && s.Original.Id == id)
+                .ToListAsync();
+
+            foreach (var remix in remixes) {
+                song.Remixes.Add(remix);
+            }
+
             return song;
         }
 

@@ -30,6 +30,16 @@ namespace muZilla
             builder.Services.AddScoped<BlockedUserService>();
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<SongService>();
+            builder.Services.AddScoped<CollectionService>();
+
+            
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+                    options.JsonSerializerOptions.WriteIndented = true; // Для удобства чтения JSON
+                });
+            
 
             var app = builder.Build();
 

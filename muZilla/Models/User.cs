@@ -21,5 +21,6 @@ namespace muZilla.Models
         public virtual Image ProfilePicture { get; set; }
         public virtual ICollection<FriendsCouple> Friends { get; set; }
         public virtual ICollection<BlockedUser> Blocked { get; set; }
+        // publuc virtual ICollection<>
     }
 }
