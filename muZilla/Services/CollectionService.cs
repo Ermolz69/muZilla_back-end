@@ -12,8 +12,13 @@ namespace muZilla.Services
         public string Title { get; set; }
         public string Description { get; set; }
         public int ViewingAccess { get; set; }
+        public bool IsFavorite { get; set; }
+        public bool IsBanned { get; set; }
+        public int? AuthorId { get; set; }
         public int? CoverId { get; set; }
-        public List<int> SongIds { get; set; }
+        public List<int> SongIds { get; set; } = new List<int>();
+
+
     }
 
     public class CollectionService
@@ -25,63 +30,95 @@ namespace muZilla.Services
             _context = context;
         }
 
-        public async Task<int> CreateCollectionAsync(CollectionDTO collectionDTO, int userId)
+        public async Task<int> CreateCollectionAsync(CollectionDTO collectionDTO)
         {
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) return -1;
-
-            var collection = new Collection()
+            var collection = new Collection
             {
                 Title = collectionDTO.Title,
                 Description = collectionDTO.Description,
                 ViewingAccess = collectionDTO.ViewingAccess,
-                IsFavorite = false,
-                IsBanned = false,
-                Author = user,
-                Cover = collectionDTO.CoverId.HasValue ? await _context.Images.FindAsync(collectionDTO.CoverId.Value) : null,
-                Songs = new List<Song>()
+                IsFavorite = collectionDTO.IsFavorite,
+                IsBanned = collectionDTO.IsBanned,
+                Author = await _context.Users.FindAsync(collectionDTO.AuthorId)
             };
 
+            // Если CoverId не указан, подставляем дефолтную картинку
+            if (collectionDTO.CoverId == null)
+            {
+                // Ищем в БД дефолтную картинку по пути DEFAULT/default.png
+                var defaultImage = await _context.Images.FirstOrDefaultAsync(i => i.ImageFilePath == "DEFAULT/default.png");
+                if (defaultImage == null)
+                {
+                    // Если дефолтной картинки нет в БД, создадим её
+                    defaultImage = new Image
+                    {
+                        ImageFilePath = "DEFAULT/default.png",
+                        DomainColor = "125,125,125"
+                    };
+                    _context.Images.Add(defaultImage);
+                    await _context.SaveChangesAsync();
+                }
+                collection.Cover = defaultImage;
+            }
+            else
+            {
+                collection.Cover = await _context.Images.FindAsync(collectionDTO.CoverId);
+            }
+
+            collection.Songs = new List<Song>();
             foreach (var songId in collectionDTO.SongIds)
             {
                 var song = await _context.Songs.FindAsync(songId);
-                if (song != null) collection.Songs.Add(song);
+                if (song != null)
+                    collection.Songs.Add(song);
             }
 
             _context.Collections.Add(collection);
             await _context.SaveChangesAsync();
+
             return collection.Id;
         }
 
+
         public async Task<Collection> GetCollectionByIdAsync(int id)
         {
-            return await _context.Collections
-                .Include(c => c.Songs)
+            var collection = await _context.Collections
                 .Include(c => c.Author)
+                .Include(c => c.Cover)
+                .Include(c => c.Songs)
                 .FirstOrDefaultAsync(c => c.Id == id);
+
+            return collection;
         }
 
-        public async Task UpdateCollectionAsync(int id, CollectionDTO collectionDTO)
+        public async Task UpdateCollectionByIdAsync(int id, CollectionDTO collectionDTO)
         {
-            var collection = await _context.Collections.FindAsync(id);
+            var collection = await _context.Collections
+                .Include(c => c.Songs)
+                .FirstOrDefaultAsync(c => c.Id == id);
             if (collection == null) return;
 
             collection.Title = collectionDTO.Title;
             collection.Description = collectionDTO.Description;
             collection.ViewingAccess = collectionDTO.ViewingAccess;
-            collection.Cover = collectionDTO.CoverId.HasValue ? await _context.Images.FindAsync(collectionDTO.CoverId.Value) : null;
+            collection.IsFavorite = collectionDTO.IsFavorite;
+            collection.IsBanned = collectionDTO.IsBanned;
+            collection.Author = await _context.Users.FindAsync(collectionDTO.AuthorId);
+            collection.Cover = await _context.Images.FindAsync(collectionDTO.CoverId);
 
+            // Обновляем список песен
             collection.Songs.Clear();
             foreach (var songId in collectionDTO.SongIds)
             {
                 var song = await _context.Songs.FindAsync(songId);
-                if (song != null) collection.Songs.Add(song);
+                if (song != null)
+                    collection.Songs.Add(song);
             }
 
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteCollectionAsync(int id)
+        public async Task DeleteCollectionByIdAsync(int id)
         {
             var collection = await _context.Collections.FindAsync(id);
             if (collection != null)
@@ -91,49 +128,57 @@ namespace muZilla.Services
             }
         }
 
-        public async Task UpdateFavoritesAsync(int userId, int songId, bool like)
+        public async Task<List<Collection>> GetCollectionsByKeyWord(string search, bool showBanned = false)
         {
-            var song = await _context.Songs.FindAsync(songId);
-            if (song == null) return;
-
-            var favoriteCollection = await _context.Collections
+            var query = _context.Collections
+                .Include(c => c.Author)
                 .Include(c => c.Songs)
-                .FirstOrDefaultAsync(c => c.IsFavorite && c.Author.Id == userId);
+                .Where(c =>
+                    c.Title.Contains(search)
+                    || c.Description.Contains(search)
+                    || c.Author.Username.Contains(search));
 
-            if (favoriteCollection == null)
+            if (!showBanned)
             {
-                var user = await _context.Users.FindAsync(userId);
-                if (user == null) return;
-
-                favoriteCollection = new Collection()
-                {
-                    Title = "Favorites",
-                    Description = "Automatically generated favorites playlist",
-                    ViewingAccess = 0,
-                    IsFavorite = true,
-                    Author = user,
-                    Songs = new List<Song>(),
-                    Cover = song.Cover
-                };
-                _context.Collections.Add(favoriteCollection);
+                query = query.Where(c => c.IsBanned == false);
             }
 
-            if (like)
-            {
-                if (!favoriteCollection.Songs.Contains(song))
-                {
-                    favoriteCollection.Songs.Add(song);
-                }
-            }
-            else
-            {
-                if (favoriteCollection.Songs.Contains(song))
-                {
-                    favoriteCollection.Songs.Remove(song);
-                }
-            }
-
-            await _context.SaveChangesAsync();
+            var results = await query.ToListAsync();
+            return results;
         }
+
+
+        public async Task LikeCollectionAsync(int userId, int collectionId)
+        {
+            var user = await _context.Users
+                .Include(u => u.LikedCollections)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+            var collection = await _context.Collections.FindAsync(collectionId);
+            if (user == null || collection == null) return;
+
+            if (!user.LikedCollections.Contains(collection))
+            {
+                user.LikedCollections.Add(collection);
+                collection.Likes++;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task UnlikeCollectionAsync(int userId, int collectionId)
+        {
+            var user = await _context.Users
+                .Include(u => u.LikedCollections)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+            var collection = await _context.Collections.FindAsync(collectionId);
+            if (user == null || collection == null) return;
+
+            if (user.LikedCollections.Contains(collection))
+            {
+                user.LikedCollections.Remove(collection);
+                collection.Likes--;
+                await _context.SaveChangesAsync();
+            }
+        }
+
     }
 }

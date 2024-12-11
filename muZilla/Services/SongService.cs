@@ -94,6 +94,47 @@ namespace muZilla.Services
             return song;
         }
 
+        public async Task<int> UpdateSongByIdAsync(int id, SongDTO songDTO)
+        {
+            var song = await _context.Songs
+                .Include(s => s.Authors)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (song == null)
+            {
+                return 404;
+            }
+
+            song.Title = songDTO.Title;
+            song.Description = songDTO.Description;
+            song.Length = songDTO.Length;
+            song.Genres = songDTO.Genres;
+            song.RemixesAllowed = songDTO.RemixesAllowed;
+            song.PublishDate = songDTO.PublishDate;
+            song.HasExplicitLyrics = songDTO.HasExplicitLyrics;
+            song.Cover = songDTO.ImageId.HasValue ? await _context.Images.FindAsync(songDTO.ImageId.Value) : null;
+
+            song.Authors.Clear();
+            foreach (var authorId in songDTO.AuthorIds)
+            {
+                var author = await _context.Users
+                    .Include(u => u.AccessLevel)
+                    .FirstOrDefaultAsync(u => u.Id == authorId);
+
+                if (author != null)
+                {
+                    song.Authors.Add(author);
+                }
+            }
+
+            _context.Songs.Update(song);
+            await _context.SaveChangesAsync();
+
+            return 200;
+        }
+
+
+        /*
         public async Task UpdateSongByIdAsync(int id, SongDTO songDTO)
         {
             Song song = await _context.Songs.FindAsync(id);
@@ -107,11 +148,14 @@ namespace muZilla.Services
             song.HasExplicitLyrics = songDTO.HasExplicitLyrics;
             song.Cover = await _context.Images.FindAsync(songDTO.ImageId);
             foreach (int i in songDTO.AuthorIds)
-                song.Authors.Add(await _context.Users.FindAsync(i));
+            {
+                User? user = await _context.Users.FindAsync(i);
+                if (user != null) song.Authors.Add(user);
+            }
 
             await _context.SaveChangesAsync();
         }
-
+         */
         public async Task DeleteSongByIdAsync(int id)
         {
             Song? song = await _context.Songs.FindAsync(id);
@@ -142,6 +186,73 @@ namespace muZilla.Services
                 .ToList();
 
             return filteredSongs;
+        }
+
+        public async Task LikeSongAsync(int userId, int songId)
+        {
+            var user = await _context.Users
+                .Include(u => u.FavoritesCollection)
+                    .ThenInclude(c => c.Songs)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null) return;
+
+            if (user.FavoritesCollection == null)
+            {
+                var favoritesCollection = new Collection
+                {
+                    Title = "Favorites",
+                    Description = "Your favorite songs",
+                    ViewingAccess = 0,
+                    IsFavorite = true,
+                    IsBanned = false,
+                    Author = user,
+                    Songs = new List<Song>(),
+                    Cover = new Image() 
+                    { 
+                        ImageFilePath = "DEFAULT/default.png",
+                        DomainColor = "125,125,125"
+                    }
+                };
+
+                _context.Collections.Add(favoritesCollection);
+                await _context.SaveChangesAsync();
+
+                user.FavoritesCollectionId = favoritesCollection.Id;
+                user.FavoritesCollection = favoritesCollection;
+                await _context.SaveChangesAsync();
+            }
+
+            var song = await _context.Songs.FindAsync(songId);
+
+            if (song == null) return;
+
+            if (!user.FavoritesCollection.Songs.Contains(song))
+            {
+                user.FavoritesCollection.Songs.Add(song);
+                song.Likes++;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+
+        public async Task UnlikeSongAsync(int userId, int songId)
+        {
+            var user = await _context.Users
+                .Include(u => u.FavoritesCollection)
+                    .ThenInclude(c => c.Songs)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            var song = await _context.Songs.FindAsync(songId);
+
+            if (user == null || song == null) return;
+
+            if (user.FavoritesCollection.Songs.Contains(song))
+            {
+                user.FavoritesCollection.Songs.Remove(song);
+                song.Likes--;
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

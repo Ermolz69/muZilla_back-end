@@ -36,11 +36,18 @@ namespace muZilla.Controllers
         }
 
         [HttpPatch("update/{id}")]
-        public async Task<IActionResult> UpdateUserByIdAsync(int id, SongDTO songDTO)
+        public async Task<IActionResult> UpdateSongByIdAsync(int id, SongDTO songDTO)
         {
-            await _songService.UpdateSongByIdAsync(id, songDTO);
-            return Ok();
+            int resultCode = await _songService.UpdateSongByIdAsync(id, songDTO);
+
+            return resultCode switch
+            {
+                200 => Ok(),
+                404 => NotFound($"Song with ID {id} not found."),
+                _ => StatusCode(500, "An unexpected error occurred.")
+            };
         }
+
 
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteSongByIdAsync(int id)
@@ -132,5 +139,21 @@ namespace muZilla.Controllers
                 search = "";
             return _songService.GetSongsByKeyWord(search, filterDTO);
         }
+
+
+        [HttpPost("likeSong/{songId}")]
+        public async Task<IActionResult> LikeSong(int userId, int songId)
+        {
+            await _songService.LikeSongAsync(userId, songId);
+            return Ok();
+        }
+
+        [HttpPost("unlikeSong/{songId}")]
+        public async Task<IActionResult> UnlikeSong(int userId, int songId)
+        {
+            await _songService.UnlikeSongAsync(userId, songId);
+            return Ok();
+        }
+
     }
 }

@@ -18,44 +18,49 @@ namespace muZilla.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateCollection(CollectionDTO collectionDTO, int userId)
+        public async Task<int> CreateCollection(CollectionDTO collectionDTO)
         {
-            var collectionId = await _collectionService.CreateCollectionAsync(collectionDTO, userId);
-            if (collectionId == -1) return BadRequest("Invalid user ID");
-            return Ok(collectionId);
+            return await _collectionService.CreateCollectionAsync(collectionDTO);
         }
 
         [HttpGet("{id}")]
-        public async Task<Collection> GetCollectionById(int id)
+        public async Task<Collection> GetCollectionByIdAsync(int id)
         {
             return await _collectionService.GetCollectionByIdAsync(id);
         }
 
         [HttpPatch("update/{id}")]
-        public async Task<IActionResult> UpdateCollection(int id, CollectionDTO collectionDTO)
+        public async Task<IActionResult> UpdateCollectionByIdAsync(int id, CollectionDTO collectionDTO)
         {
-            await _collectionService.UpdateCollectionAsync(id, collectionDTO);
+            await _collectionService.UpdateCollectionByIdAsync(id, collectionDTO);
             return Ok();
         }
 
         [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> DeleteCollection(int id)
+        public async Task<IActionResult> DeleteCollectionByIdAsync(int id)
         {
-            await _collectionService.DeleteCollectionAsync(id);
+            await _collectionService.DeleteCollectionByIdAsync(id);
             return Ok();
         }
 
-        [HttpPost("like")]
-        public async Task<IActionResult> LikeSong(int userId, int songId)
+        [HttpGet("search")]
+        public async Task<List<Collection>> GetCollectionsByKeyWord(string? search, bool showBanned = false)
         {
-            await _collectionService.UpdateFavoritesAsync(userId, songId, true);
+            if (search == null) search = "";
+            return await _collectionService.GetCollectionsByKeyWord(search, showBanned);
+        }
+
+        [HttpPost("like/{collectionId}")]
+        public async Task<IActionResult> LikeCollection(int userId, int collectionId)
+        {
+            await _collectionService.LikeCollectionAsync(userId, collectionId);
             return Ok();
         }
 
-        [HttpPost("dislike")]
-        public async Task<IActionResult> DislikeSong(int userId, int songId)
+        [HttpPost("unlike/{collectionId}")]
+        public async Task<IActionResult> UnlikeCollection(int userId, int collectionId)
         {
-            await _collectionService.UpdateFavoritesAsync(userId, songId, false);
+            await _collectionService.UnlikeCollectionAsync(userId, collectionId);
             return Ok();
         }
     }

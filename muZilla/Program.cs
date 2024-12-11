@@ -37,7 +37,7 @@ namespace muZilla
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-                    options.JsonSerializerOptions.WriteIndented = true; // Для удобства чтения JSON
+                    options.JsonSerializerOptions.WriteIndented = true;
                 });
             
 

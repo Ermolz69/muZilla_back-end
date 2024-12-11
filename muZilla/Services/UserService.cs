@@ -58,6 +58,24 @@ namespace muZilla.Services
 
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
+
+                var favoritesCollection = new Collection
+                {
+                    Title = "Favorites",
+                    Description = "Your favorite songs",
+                    ViewingAccess = 0,
+                    IsFavorite = false,
+                    IsBanned = false,
+                    Author = user,
+                    Songs = new List<Song>()
+                };
+
+                _context.Collections.Add(favoritesCollection);
+                await _context.SaveChangesAsync();
+
+                user.FavoritesCollectionId = favoritesCollection.Id;
+                user.FavoritesCollection = favoritesCollection;
+                await _context.SaveChangesAsync();
             }
         }
 
