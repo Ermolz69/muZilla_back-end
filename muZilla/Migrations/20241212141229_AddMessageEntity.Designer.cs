@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using muZilla.Data;
 
@@ -11,9 +12,11 @@ using muZilla.Data;
 namespace muZilla.Migrations
 {
     [DbContext(typeof(MuzillaDbContext))]
-    partial class MuzillaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241212141229_AddMessageEntity")]
+    partial class AddMessageEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
