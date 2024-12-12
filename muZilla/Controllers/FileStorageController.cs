@@ -131,5 +131,25 @@ namespace muZilla.Controllers
                 return BadRequest($"Error occurred: {ex.Message}");
             }
         }
+
+        [HttpGet("stream")]
+        public IActionResult StreamMusic(string login, int songId, string filename)
+        {
+            var rangeHeader = Request.Headers.Range.FirstOrDefault();
+            MusicStreamResult? result = _fileStorageService.GetMusicStream(login, songId, filename, rangeHeader);
+
+            if (result == null)
+            {
+                return NotFound("File not found");
+            }
+
+            Stream stream;
+            string contentType;
+            bool enableRangeProcessing;
+
+            result.SetAll(out stream, out contentType, out enableRangeProcessing);
+
+            return File(stream, contentType, enableRangeProcessing: enableRangeProcessing);
+        }
     }
 }
