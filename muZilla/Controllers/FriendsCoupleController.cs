@@ -5,6 +5,7 @@ namespace muZilla.Controllers
 {
     [ApiController]
     [Route("api/friendscouple")]
+    [Authorize]
     public class FriendsCoupleController : ControllerBase
     {
         private readonly FriendsCoupleService _friendsCoupleService;

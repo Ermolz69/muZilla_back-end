@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using muZilla.Services;
 
 namespace muZilla.Controllers
 {
     [ApiController]
     [Route("api/blocks")]
+    [Authorize]
     public class BlockedUserController : ControllerBase
     {
         private readonly BlockedUserService _blockedUserService;

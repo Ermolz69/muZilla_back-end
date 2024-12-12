@@ -2,6 +2,14 @@
 using muZilla.Services;
 using muZilla.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 
 namespace muZilla.Controllers
 {
@@ -13,16 +21,19 @@ namespace muZilla.Controllers
         private readonly FileStorageService _fileStorageService;
         private readonly AccessLevelService _accessLevelService;
         private readonly ImageService _imageService;
+        private readonly IConfiguration _config;
 
-        public UserController(UserService userService, AccessLevelService accessLevelService, FileStorageService fileStorageService, ImageService imageService)
+        public UserController(UserService userService, AccessLevelService accessLevelService, FileStorageService fileStorageService, ImageService imageService, IConfiguration config)
         {
             _userService = userService;
             _accessLevelService = accessLevelService;
             _fileStorageService = fileStorageService;
             _imageService = imageService;
+            _config = config;
         }
 
         [HttpPost("create")]
+        [Authorize]
         public async Task<IActionResult> CreateUser(UserDTO userDTO)
         {
             if (!ModelState.IsValid)
@@ -41,6 +52,7 @@ namespace muZilla.Controllers
         }
 
         [HttpPatch("update/{id}")]
+        [Authorize]
         public async Task<IActionResult> UpdateUserByIdAsync(int id, UserDTO userDTO)
         {
             if (!ModelState.IsValid)
@@ -53,6 +65,7 @@ namespace muZilla.Controllers
         }
 
         [HttpDelete("delete/{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteUserByIdAsync(int id)
         {
             await _userService.DeleteUserByIdAsync(id);
@@ -96,16 +109,18 @@ namespace muZilla.Controllers
             return Ok();
         }
 
-        [HttpGet("login")]
+        [HttpPost("login")]
         public IActionResult Login(string login, string password)
         {
             int res = _userService.CanLogin(login, password);
             if (res == -2) return BadRequest("User is banned. You acted like a dog shit. Go cry.");
             if (res != 1) return BadRequest("Incorrect login or incorrect password. Access denied.");
-            return Ok();
+            var token = GenerateJwtToken(login);
+            return Ok(new { token });
         }
 
         [HttpPost("ban")]
+        [Authorize]
         public async Task<IActionResult> BanUserById(int id, int admin)
         {
             if (await _userService.BanUserByIdAsync(id, admin))
@@ -119,6 +134,31 @@ namespace muZilla.Controllers
         public int GetIdByLogin(string login)
         {
             return _userService.GetIdByLogin(login);
+        }
+
+        private string GenerateJwtToken(string username)
+        {
+            var issuer = _config["Jwt:Issuer"];
+            var audience = _config["Jwt:Audience"];
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Name, username), // Add the name claim
+                new Claim("role", "User"),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: issuer,
+                audience: audience,
+                claims: claims,
+                expires: DateTime.Now.AddHours(1),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

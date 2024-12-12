@@ -3,11 +3,13 @@ using muZilla.Services;
 using muZilla.Models;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
 
 namespace muZilla.Controllers
 {
     [ApiController]
     [Route("api/collection")]
+    [Authorize]
     public class CollectionController : ControllerBase
     {
         private readonly CollectionService _collectionService;

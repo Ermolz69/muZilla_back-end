@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using muZilla.Models;
 using muZilla.Services;
@@ -24,6 +25,7 @@ namespace muZilla.Controllers
         }
 
         [HttpPost("create")]
+        [Authorize]
         public async Task<int> CreateSong(SongDTO songDTO)
         {
             return await _songService.CreateSongAsync(songDTO);
@@ -36,6 +38,7 @@ namespace muZilla.Controllers
         }
 
         [HttpPatch("update/{id}")]
+        [Authorize]
         public async Task<IActionResult> UpdateSongByIdAsync(int id, SongDTO songDTO)
         {
             int resultCode = await _songService.UpdateSongByIdAsync(id, songDTO);
@@ -50,6 +53,7 @@ namespace muZilla.Controllers
 
 
         [HttpDelete("delete/{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteSongByIdAsync(int id)
         {
             await _songService.DeleteSongByIdAsync(id);
@@ -57,6 +61,7 @@ namespace muZilla.Controllers
         }
 
         [HttpPost("publish")]
+        [Authorize]
         public async Task<IActionResult> PublishSong([FromForm] IFormFile song, [FromForm] IFormFile? image, [FromForm] IFormFile? lyrics, [FromForm] SongDTO songDTO)
         {
             Console.WriteLine("???? -> " + songDTO.ToString());
@@ -142,6 +147,7 @@ namespace muZilla.Controllers
 
 
         [HttpPost("likeSong/{songId}")]
+        [Authorize]
         public async Task<IActionResult> LikeSong(int userId, int songId)
         {
             await _songService.LikeSongAsync(userId, songId);
@@ -149,6 +155,7 @@ namespace muZilla.Controllers
         }
 
         [HttpPost("unlikeSong/{songId}")]
+        [Authorize]
         public async Task<IActionResult> UnlikeSong(int userId, int songId)
         {
             await _songService.UnlikeSongAsync(userId, songId);

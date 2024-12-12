@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using muZilla.Models;
 using muZilla.Services;
@@ -6,6 +7,7 @@ namespace muZilla.Controllers
 {
     [ApiController]
     [Route("api/accesslevel")]
+    [Authorize]
     public class AccessLevelController : ControllerBase
     {
         private readonly AccessLevelService _accessLevelService;

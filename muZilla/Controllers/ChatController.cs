@@ -57,7 +57,6 @@ namespace muZilla.Controllers
                 return Unauthorized();
             }
 
-            // Проверяем, существует ли другой пользователь
             var otherUserId = _userService.GetIdByLogin(otherUserLogin);
             if (otherUserId == -1)
             {
