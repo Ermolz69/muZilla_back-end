@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using muZilla.Data;
 
@@ -11,9 +12,11 @@ using muZilla.Data;
 namespace muZilla.Migrations
 {
     [DbContext(typeof(MuzillaDbContext))]
-    partial class MuzillaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241029110319_PublishDateAdd")]
+    partial class PublishDateAdd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,21 +53,6 @@ namespace muZilla.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("SongAuthor");
-                });
-
-            modelBuilder.Entity("UserLikedCollections", b =>
-                {
-                    b.Property<int>("CollectionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("CollectionId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserLikedCollections");
                 });
 
             modelBuilder.Entity("muZilla.Models.AccessLevel", b =>
@@ -145,17 +133,11 @@ namespace muZilla.Migrations
                     b.Property<bool>("IsFavorite")
                         .HasColumnType("bit");
 
-                    b.Property<int>("Likes")
-                        .HasColumnType("int");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ViewingAccess")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Views")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -209,34 +191,6 @@ namespace muZilla.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Images");
-                });
-
-            modelBuilder.Entity("muZilla.Models.Message", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ReceiverLogin")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SenderLogin")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("muZilla.Models.Song", b =>
@@ -313,9 +267,6 @@ namespace muZilla.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("FavoritesCollectionId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsBanned")
                         .HasColumnType("bit");
 
@@ -334,9 +285,6 @@ namespace muZilla.Migrations
                     b.Property<int>("ProfilePictureId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PublicId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("ReceiveNotifications")
                         .HasColumnType("bit");
 
@@ -351,10 +299,6 @@ namespace muZilla.Migrations
 
                     b.HasIndex("AccessLevelId");
 
-                    b.HasIndex("FavoritesCollectionId")
-                        .IsUnique()
-                        .HasFilter("[FavoritesCollectionId] IS NOT NULL");
-
                     b.HasIndex("ProfilePictureId");
 
                     b.ToTable("Users");
@@ -366,15 +310,13 @@ namespace muZilla.Migrations
                         .WithMany()
                         .HasForeignKey("CollectionId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_CollectionSong_Collections_CollectionId");
+                        .IsRequired();
 
                     b.HasOne("muZilla.Models.Song", null)
                         .WithMany()
                         .HasForeignKey("SongId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_CollectionSong_Songs_SongId");
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SongAuthor", b =>
@@ -383,32 +325,13 @@ namespace muZilla.Migrations
                         .WithMany()
                         .HasForeignKey("SongId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_SongAuthor_Songs_SongId");
+                        .IsRequired();
 
                     b.HasOne("muZilla.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_SongAuthor_Users_UserId");
-                });
-
-            modelBuilder.Entity("UserLikedCollections", b =>
-                {
-                    b.HasOne("muZilla.Models.Collection", null)
-                        .WithMany()
-                        .HasForeignKey("CollectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_UserLikedCollections_Collections_CollectionId");
-
-                    b.HasOne("muZilla.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_UserLikedCollections_Users_UserId");
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("muZilla.Models.BlockedUser", b =>
@@ -493,11 +416,6 @@ namespace muZilla.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("muZilla.Models.Collection", "FavoritesCollection")
-                        .WithOne()
-                        .HasForeignKey("muZilla.Models.User", "FavoritesCollectionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("muZilla.Models.Image", "ProfilePicture")
                         .WithMany()
                         .HasForeignKey("ProfilePictureId")
@@ -505,8 +423,6 @@ namespace muZilla.Migrations
                         .IsRequired();
 
                     b.Navigation("AccessLevel");
-
-                    b.Navigation("FavoritesCollection");
 
                     b.Navigation("ProfilePicture");
                 });
