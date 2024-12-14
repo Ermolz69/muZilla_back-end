@@ -35,6 +35,7 @@ namespace muZilla
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<SongService>();
             builder.Services.AddScoped<CollectionService>();
+            builder.Services.AddScoped<SearchService>();
 
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
