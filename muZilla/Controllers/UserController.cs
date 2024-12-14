@@ -144,7 +144,7 @@ namespace muZilla.Controllers
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, username), // Add the name claim
+                new Claim(ClaimTypes.Name, username),
                 new Claim("role", "User"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
