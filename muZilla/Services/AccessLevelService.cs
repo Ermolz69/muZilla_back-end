@@ -1,32 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using muZilla.Data;
+﻿using muZilla.Data;
 using muZilla.Models;
-using System.ComponentModel.DataAnnotations;
+using muZilla.DTOs;
 
 
 namespace muZilla.Services
 {
-    public class AccessLevelDTO
-    {
-        [Required]
-        public bool CanBanUser { get; set; }
-
-        [Required]
-        public bool CanBanSong { get; set; }
-
-        [Required]
-        public bool CanDownload { get; set; }
-
-        [Required]
-        public bool CanUpload { get; set; }
-
-        [Required]
-        public bool CanReport { get; set; }
-
-        [Required]
-        public bool CanManageAL { get; set; }
-    }
-
     public class AccessLevelService
     {
         private readonly MuzillaDbContext _context;

@@ -1,22 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+
 using muZilla.Data;
 using muZilla.Models;
+using muZilla.DTOs;
 
 namespace muZilla.Services
 {
-    public class UserDTO
-    {
-        public string Username { get; set; }
-        public string Email { get; set; }
-        public string Login { get; set; }
-        public string Password { get; set; }
-        public string PhoneNumber { get; set; }
-        public DateTime DateOfBirth { get; set; }
-        public bool ReceiveNotifications { get; set; }
-        public int AccessLevelId { get; set; }
-        public int ProfilePictureId { get; set; }
-    }
     public class UserService
     {
         private readonly MuzillaDbContext _context;
@@ -34,12 +23,21 @@ namespace muZilla.Services
             return true;
         }
 
+        /// <summary>
+        /// Creates a new user based on the provided data.
+        /// </summary>
+        /// <param name="userDTO">The DTO object containing user data for creation.</param>
+        /// <returns>An asynchronous task representing the user creation process.</returns>
+        /// <remarks>
+        /// 1. Validates the user data using the <see cref="IsUserValid(UserDTO)"/> method.
+        /// 2. Creates a new user and adds them to the database.
+        /// 3. Automatically creates a "Favorites" collection for the new user.
+        /// 4. Links the created collection to the user.
+        /// </remarks>
         public async Task CreateUserAsync(UserDTO userDTO)
         {
             if (IsUserValid(userDTO))
             {
-
-
                 User user = new User()
                 {
                     Username = userDTO.Username,

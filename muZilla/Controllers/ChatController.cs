@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using muZilla.Services;
-using muZilla.Models;
-using System.Collections.Generic;
+
 using System.Security.Claims;
-using System.Threading.Tasks;
+
+using muZilla.Models;
+using muZilla.Services;
+using muZilla.DTOs;
 
 namespace muZilla.Controllers
 {

@@ -1,5 +1,4 @@
-﻿using Azure.Storage.Queues;
-using muZilla.Data;
+﻿using muZilla.Data;
 using muZilla.Models;
 
 namespace muZilla.Services

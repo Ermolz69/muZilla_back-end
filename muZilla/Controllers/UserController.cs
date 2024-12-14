@@ -1,15 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization;
+
+using System.Text;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+
 using muZilla.Services;
 using muZilla.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using Microsoft.AspNetCore.Authorization;
+using muZilla.DTOs;
 
 namespace muZilla.Controllers
 {
@@ -99,7 +98,7 @@ namespace muZilla.Controllers
             }
 
             await _fileStorageService.CreateFileInDirectoryAsync(userDTO.Login, "pic.png", fileBytes);
-            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = userDTO.Login + "/pic.png", DomainColor = "69,1939,69" });
+            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = userDTO.Login + "/pic.png", DomainColor = "69,139,69" });
 
             userDTO.AccessLevelId = access_id;
             userDTO.ProfilePictureId = _imageService.GetNewestAsync();

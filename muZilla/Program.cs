@@ -25,7 +25,7 @@ namespace muZilla
             builder.Services.AddDbContext<MuzillaDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Register your custom services
+            // Register custom services
             builder.Services.AddScoped<AccessLevelService>();
             builder.Services.AddScoped<ImageService>();
             builder.Services.AddScoped<ChatService>();
@@ -70,6 +70,8 @@ namespace muZilla
             });
 
             builder.Services.AddAuthorization();
+
+
 
             var app = builder.Build();
 

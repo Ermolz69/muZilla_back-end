@@ -1,19 +1,11 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+
 using muZilla.Data;
 using muZilla.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
+using muZilla.DTOs;
 
 namespace muZilla.Services
 {
-    public class MessageDTO
-    {
-        public string ReceiverLogin { get; set; }
-        public string Content { get; set; }
-    }
-
     public class ChatService
     {
         private readonly MuzillaDbContext _context;
@@ -22,6 +14,7 @@ namespace muZilla.Services
         {
             _context = context;
         }
+
 
         public async Task SendMessageAsync(string senderLogin, MessageDTO messageDTO)
         {

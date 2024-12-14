@@ -1,32 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+
 using muZilla.Data;
-using muZilla.Migrations;
 using muZilla.Models;
-using System.Linq;
-using System.Security.Cryptography.Xml;
+using muZilla.DTOs;
 
 namespace muZilla.Services
 {
-    public class SongDTO
-    {
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public int Length { get; set; }
-        public string Genres { get; set; }
-        public bool RemixesAllowed { get; set; }
-        public DateTime PublishDate { get; set; }
-        public int? OriginalId { get; set; }
-        public bool HasExplicitLyrics { get; set; }
-        public int? ImageId { get; set; }
-        public List<int> AuthorIds { get; set; }
-    }
-    public class FilterDTO
-    {
-        public string? Genres { get; set; }
-        public bool? Remixes { get; set; }
-        public bool ShowBanned { get; set; } = false;
-    }
-
     public class SongService
     {
         private readonly MuzillaDbContext _context;
@@ -133,29 +112,6 @@ namespace muZilla.Services
             return 200;
         }
 
-
-        /*
-        public async Task UpdateSongByIdAsync(int id, SongDTO songDTO)
-        {
-            Song song = await _context.Songs.FindAsync(id);
-            song.Title = songDTO.Title;
-            song.Description = songDTO.Description;
-            song.Length = songDTO.Length;
-            song.Genres = songDTO.Genres;
-            song.PublishDate = songDTO.PublishDate;
-            song.OriginalId = songDTO.OriginalId;
-            song.RemixesAllowed = songDTO.RemixesAllowed;
-            song.HasExplicitLyrics = songDTO.HasExplicitLyrics;
-            song.Cover = await _context.Images.FindAsync(songDTO.ImageId);
-            foreach (int i in songDTO.AuthorIds)
-            {
-                User? user = await _context.Users.FindAsync(i);
-                if (user != null) song.Authors.Add(user);
-            }
-
-            await _context.SaveChangesAsync();
-        }
-         */
         public async Task DeleteSongByIdAsync(int id)
         {
             Song? song = await _context.Songs.FindAsync(id);
