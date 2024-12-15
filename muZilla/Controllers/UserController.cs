@@ -118,17 +118,6 @@ namespace muZilla.Controllers
             return Ok(new { token });
         }
 
-        [HttpPost("ban")]
-        [Authorize]
-        public async Task<IActionResult> BanUserById(int id, int admin)
-        {
-            if (await _userService.BanUserByIdAsync(id, admin))
-            {
-                return Ok();
-            }
-            return BadRequest("Something got wrong. Go fuck yourself. Bitch.");
-        }
-
         [HttpGet("loginid")]
         public int GetIdByLogin(string login)
         {

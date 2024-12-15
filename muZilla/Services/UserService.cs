@@ -203,44 +203,7 @@ namespace muZilla.Services
             if (user.IsBanned) return -2;
 
             return 1;
-        }
-
-        /// <summary>
-        /// Bans a user by their ID if the operation is authorized.
-        /// </summary>
-        /// <param name="idToBlock">The ID of the user to be banned.</param>
-        /// <param name="idOfAdmin">The ID of the admin attempting to ban the user.</param>
-        /// <returns>
-        /// An asynchronous task that returns <c>true</c> if the user was successfully banned; otherwise, <c>false</c>.
-        /// </returns>
-        /// <remarks>
-        /// 1. Retrieves both the target user and the admin from the database by their IDs.
-        /// 2. Verifies the admin's permissions to ban users:
-        ///    - The admin must have the "CanBanUser" permission and must not be banned.
-        ///    - The target user must not have the "CanBanUser" permission unless overridden by the admin's "CanManageAL" permission.
-        /// 3. If the conditions are met, bans the user and saves the changes to the database.
-        /// </remarks>
-        public async Task<bool> BanUserByIdAsync(int idToBlock, int idOfAdmin)
-        {
-            User? user = await GetUserByIdAsync(idToBlock);
-            User? admin = await GetUserByIdAsync(idOfAdmin);
-
-            if (user == null || admin == null)
-            {
-                return false;
-            }
-
-            if ((admin.AccessLevel.CanBanUser 
-                && !admin.IsBanned 
-                && !user.AccessLevel.CanBanUser)
-                || admin.AccessLevel.CanManageAL) 
-                    user.IsBanned = true;
-
-            else return false;
-
-            await _context.SaveChangesAsync();
-            return true;
-        }
+        }    
 
         /// <summary>
         /// Retrieves the ID of a user based on their login.
