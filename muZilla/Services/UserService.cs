@@ -9,6 +9,7 @@ namespace muZilla.Services
     public class UserService
     {
         private readonly MuzillaDbContext _context;
+        private readonly AccessLevelService _accessLevelService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserService"/> class with the specified database context.
@@ -173,8 +174,21 @@ namespace muZilla.Services
         /// </remarks>
         public async Task DeleteUserByIdAsync(int id)
         {
-            User? user = await _context.Users.FindAsync(id);
-            if (user != null) _context.Users.Remove(user);
+            User? user = await _context.Users
+                .Include(u => u.AccessLevel)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null)
+                return;
+
+            // Удаляем уровень доступа через сервис
+            if (user.AccessLevel != null)
+            {
+                await _accessLevelService.DeleteAccessLevelByIdAsync(user.AccessLevel.Id);
+            }
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
         }
 
         /// <summary>
@@ -230,5 +244,13 @@ namespace muZilla.Services
                 return -1;
             }
         }
+
+        public async Task<User> GetUserByLoginAsync(string login)
+        {
+            return await _context.Users
+                .Include(u => u.AccessLevel)
+                .FirstOrDefaultAsync(u => u.Login == login);
+        }
+
     }
 }

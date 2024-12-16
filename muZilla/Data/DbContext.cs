@@ -20,6 +20,8 @@ namespace muZilla.Data
         public DbSet<AccessLevel> AccessLevels { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Ban> Bans { get; set; }
+        public DbSet<Report> Reports { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
