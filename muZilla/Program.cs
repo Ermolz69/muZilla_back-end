@@ -5,6 +5,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 
 namespace muZilla
 {
@@ -46,7 +47,6 @@ namespace muZilla
                     options.JsonSerializerOptions.WriteIndented = true;
                 });
 
-            // JWT Authentication configuration
             var jwtSettings = builder.Configuration.GetSection("Jwt");
             var key = jwtSettings["Key"];
             var issuer = jwtSettings["Issuer"];
@@ -73,8 +73,6 @@ namespace muZilla
             });
 
             builder.Services.AddAuthorization();
-
-
 
             var app = builder.Build();
 

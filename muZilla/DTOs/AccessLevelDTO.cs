@@ -20,6 +20,9 @@ namespace muZilla.DTOs
         public bool CanReport { get; set; }
 
         [Required]
+        public bool CanManageReports { get; set; }
+
+        [Required]
         public bool CanManageAL { get; set; }
     }
 }

@@ -19,6 +19,7 @@ namespace muZilla.Data
         public DbSet<BlockedUser> BlockedUsers { get; set; }
         public DbSet<AccessLevel> AccessLevels { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<SupportMessage> SupportMessages { get; set; }
         public DbSet<Ban> Bans { get; set; }
         public DbSet<Report> Reports { get; set; }
 
@@ -156,6 +157,18 @@ namespace muZilla.Data
                 .HasOne(b => b.BannedUser)
                 .WithMany()
                 .HasForeignKey(b => b.BannedUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Ban>()
+                .HasOne(b => b.BannedSong)
+                .WithMany()
+                .HasForeignKey(b => b.BannedSongId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Ban>()
+                .HasOne(b => b.BannedCollection)
+                .WithMany()
+                .HasForeignKey(b => b.BannedCollectionId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

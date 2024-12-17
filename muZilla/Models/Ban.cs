@@ -1,33 +1,21 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
+﻿using muZilla.Models;
 
-namespace muZilla.Models
+public class Ban
 {
-    public class Ban
-    {
-        [Key]
-        public int Id { get; set; }
+    public int Id { get; set; }
+    public int BannedByUserId { get; set; }
+    public int? BannedUserId { get; set; }
+    public int? BannedSongId { get; set; }
+    public int? BannedCollectionId { get; set; } 
 
-        [Required]
-        public int BannedByUserId { get; set; }
+    public int BanType { get; set; }
 
-        [ForeignKey("BannedByUserId")]
-        public virtual User BannedByUser { get; set; }
+    public string Reason { get; set; } = string.Empty;
+    public DateTime BanUntilUtc { get; set; }
+    public DateTime BannedAtUtc { get; set; }
 
-        [Required]
-        public int BannedUserId { get; set; }
-
-        [ForeignKey("BannedUserId")]
-        public virtual User BannedUser { get; set; }
-
-        [Required]
-        [MaxLength(500)]
-        public string Reason { get; set; }
-
-        [Required]
-        public DateTime BanUntilUtc { get; set; }
-
-        [Required]
-        public DateTime BannedAtUtc { get; set; } = DateTime.UtcNow;
-    }
+    public User BannedByUser { get; set; } = null!;
+    public User? BannedUser { get; set; }
+    public Song? BannedSong { get; set; }
+    public Collection? BannedCollection { get; set; }
 }

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-
+using muZilla.Models;
 using muZilla.Services;
 
 namespace muZilla.Controllers
@@ -9,10 +9,12 @@ namespace muZilla.Controllers
     public class FileStorageController : ControllerBase
     {
         private readonly FileStorageService _fileStorageService;
+        private readonly UserService _userService;
 
-        public FileStorageController(FileStorageService fileStorageService)
+        public FileStorageController(FileStorageService fileStorageService, UserService userService)
         {
             _fileStorageService = fileStorageService;
+            _userService = userService;
         }
 
         [HttpPost("createdirectory")]
@@ -119,7 +121,8 @@ namespace muZilla.Controllers
         {
             try
             {
-                byte[]? fileBytes = await _fileStorageService.ReadFileFromSongAsync(login, songId, filename);
+                User user = await _userService.GetUserByLoginAsync(login);
+                byte[]? fileBytes = await _fileStorageService.ReadFileFromSongAsync(login, songId, filename, user.AccessLevel);
 
                 if (fileBytes != null)
                 {

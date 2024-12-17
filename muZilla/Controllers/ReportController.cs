@@ -67,10 +67,10 @@ namespace muZilla.Controllers
             var user = await _userService.GetUserByLoginAsync(userLogin);
             if (user == null) return Unauthorized();
 
-            //if (user.AccessLevel == null || user.AccessLevel.Level < 10)
-            //{
-            //    return Forbid("Недостаточно прав для просмотра активных репортов");
-            //}
+            if (user.AccessLevel == null || user.AccessLevel.CanReport)
+            {
+                return Forbid("Недостаточно прав для просмотра активных репортов");
+            }
 
             var reports = await _reportService.GetActiveReportsAsync();
             return Ok(reports);

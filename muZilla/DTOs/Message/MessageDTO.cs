@@ -1,4 +1,4 @@
-﻿namespace muZilla.DTOs
+﻿namespace muZilla.DTOs.Message
 {
     public class MessageDTO
     {

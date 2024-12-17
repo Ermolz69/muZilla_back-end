@@ -1,6 +1,7 @@
 ﻿using Azure;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
+using muZilla.Models;
 
 namespace muZilla.Services
 {
@@ -85,13 +86,15 @@ namespace muZilla.Services
             }
         }
 
-        public async Task<byte[]?> ReadFileFromSongAsync(string login, int songId, string filename)
+        public async Task<byte[]?> ReadFileFromSongAsync(string login, int songId, string filename, AccessLevel ac)
         {
             ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(login);
 
             ShareDirectoryClient subdirClient = directoryClient.GetSubdirectoryClient(songId.ToString());
 
             ShareFileClient fileClient = subdirClient.GetFileClient(filename);
+
+            if (filename.EndsWith(".mp3")) if (!ac.CanDownload) throw new Exception("No vip no chip");
 
             try
             {

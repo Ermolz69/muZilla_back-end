@@ -6,9 +6,9 @@
     public class BanRequestDTO
     {
         /// <summary>
-        /// The ID of the user to be banned.
+        /// The ID of the thing to be banned.
         /// </summary>
-        public int UserToBanId { get; set; }
+        public int IdToBan { get; set; }
 
         /// <summary>
         /// The ID of the admin performing the ban.

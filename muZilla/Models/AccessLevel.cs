@@ -10,6 +10,8 @@ namespace muZilla.Models
         public bool CanDownload { get; set; }
         public bool CanUpload { get; set; }
         public bool CanReport { get; set; }
+        public bool CanManageReports { get; set; }
+        public bool CanResponeOnSupports { get; set; }
         public bool CanManageAL { get; set; }
     }
 }
