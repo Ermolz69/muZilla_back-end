@@ -245,7 +245,7 @@ namespace muZilla.Services
             }
         }
 
-        public async Task<User> GetUserByLoginAsync(string login)
+        public async Task<User?> GetUserByLoginAsync(string login)
         {
             return await _context.Users
                 .Include(u => u.AccessLevel)

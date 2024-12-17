@@ -2,6 +2,8 @@
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
 using muZilla.Models;
+using System.Drawing;
+using 
 
 namespace muZilla.Services
 {
@@ -194,5 +196,9 @@ namespace muZilla.Services
             return new MusicStreamResult(finalStream, "audio/mpeg", true);
         }
 
+        public string GetDomainColor(byte[] pic)
+        {
+            
+        }
     }
 }

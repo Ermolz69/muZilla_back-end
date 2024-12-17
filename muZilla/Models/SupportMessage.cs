@@ -14,6 +14,9 @@ namespace muZilla.Models
         public string ReceiverLogin { get; set; }
 
         [Required]
+        public int SupporterId { get; set; }
+
+        [Required]
         public string Content { get; set; }
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;

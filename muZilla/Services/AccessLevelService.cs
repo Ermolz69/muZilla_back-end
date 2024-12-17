@@ -26,6 +26,7 @@ namespace muZilla.Services
                 CanManageAL = accessLevelDTO.CanManageAL,
                 CanReport = accessLevelDTO.CanReport,
                 CanManageReports = accessLevelDTO.CanManageReports,
+                CanManageSupports = accessLevelDTO.CanManageSupports,
                 CanUpload = accessLevelDTO.CanUpload
             };
 
@@ -51,6 +52,7 @@ namespace muZilla.Services
                 accessLevel.CanUpload = accessLevelDTO.CanUpload;
                 accessLevel.CanReport = accessLevelDTO.CanReport;
                 accessLevel.CanManageReports = accessLevelDTO.CanManageReports;
+                accessLevel.CanManageSupports = accessLevelDTO.CanManageSupports;
                 accessLevel.CanManageAL = accessLevelDTO.CanManageAL;
 
                 _context.AccessLevels.Update(accessLevel);
@@ -78,6 +80,7 @@ namespace muZilla.Services
                 CanUpload = true,
                 CanReport = true,
                 CanManageReports = false,
+                CanManageSupports = false,
                 CanManageAL = false
             });
 
@@ -182,6 +185,14 @@ namespace muZilla.Services
             if (!user.AccessLevel.CanManageAL) return;
 
             if (!user.AccessLevel.CanDownload) throw new Exception($"{user.Login} cannot download songs.");
+        }
+
+        public void EnsureThisUserCanManageSupports(User? user)
+        {
+            EnsureThisUserCanDoAnything(user);
+            if (!user.AccessLevel.CanManageAL) return;
+
+            if (!user.AccessLevel.CanManageSupports) throw new Exception($"{user.Login} cannot manage supports!");
         }
     }
 }

@@ -11,7 +11,7 @@ namespace muZilla.Models
         public bool CanUpload { get; set; }
         public bool CanReport { get; set; }
         public bool CanManageReports { get; set; }
-        public bool CanResponeOnSupports { get; set; }
+        public bool CanManageSupports { get; set; }
         public bool CanManageAL { get; set; }
     }
 }
