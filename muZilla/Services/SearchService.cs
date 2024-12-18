@@ -31,16 +31,23 @@ namespace muZilla.Services
         }
 
         /// <summary>
-        /// Searches for songs by Title, Genres, and HasExplicitLyrics as before.
+        /// Searches for songs by Title, Genres, HasExplicitLyrics, and PublishDate range.
         /// </summary>
-        public async Task<List<Song>> SearchSongsAsync(string? title, string? genres, bool? hasExplicit)
+        public async Task<List<Song>> SearchSongsAsync(
+            string? title,
+            string? genres,
+            bool? hasExplicit,
+            DateTime? fromDate,
+            DateTime? toDate)
         {
             var query = _context.Songs
                 .Include(s => s.Authors)
+                .Include(s => s.Original)
+                .Include(s => s.Cover)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(title))
-                query = query.Where(s => s.Title.Contains(title));
+                query = query.Where(s => EF.Functions.Like(s.Title, $"%{title}%"));
 
             if (!string.IsNullOrWhiteSpace(genres))
             {
@@ -48,13 +55,24 @@ namespace muZilla.Services
                                             .Select(g => g.Trim())
                                             .ToList();
 
-                query = query.Where(s =>
-                    requestedGenres.All(rg => s.Genres.Contains(rg))
-                );
+
+                foreach (var genre in requestedGenres)
+                {
+                    var genrePattern = $"%{genre}%";
+                    query = query.Where(s => EF.Functions.Like(s.Genres, genrePattern));
+                }
             }
 
             if (hasExplicit.HasValue)
                 query = query.Where(s => s.HasExplicitLyrics == hasExplicit.Value);
+
+            if (fromDate.HasValue)
+                query = query.Where(s => s.PublishDate >= fromDate.Value);
+
+            if (toDate.HasValue)
+                query = query.Where(s => s.PublishDate <= toDate.Value);
+
+            query = query.OrderByDescending(s => s.PublishDate);
 
             return await query.ToListAsync();
         }
@@ -78,5 +96,6 @@ namespace muZilla.Services
 
             return await query.ToListAsync();
         }
+
     }
 }

@@ -29,17 +29,31 @@ namespace muZilla.Controllers
         }
 
         /// <summary>
-        /// Search songs by title, genres, and hasExplicit.
-        /// Example: GET /api/search/songs?title=love&genres=rock,pop&hasExplicit=true
+        /// Search songs by title, genres, hasExplicit, and release date range.
+        /// Example: GET /api/search/songs?title=love&genres=rock,pop&hasExplicit=true&fromDate=2023-01-01&toDate=2023-12-31
         /// </summary>
         [HttpGet("songs")]
-        public async Task<IActionResult> SearchSongs([FromQuery] string? title, [FromQuery] string? genres, [FromQuery] bool? hasExplicit)
+        public async Task<IActionResult> SearchSongs([FromQuery] DTOs.SongSearchParametersDTO parameters)
         {
-            var results = await _searchService.SearchSongsAsync(title, genres, hasExplicit);
+            // Validate date range
+            if (parameters.FromDate.HasValue && parameters.ToDate.HasValue && parameters.FromDate > parameters.ToDate)
+            {
+                return BadRequest("fromDate cannot be later than toDate.");
+            }
+
+            var results = await _searchService.SearchSongsAsync(
+                parameters.Title,
+                parameters.Genres,
+                parameters.HasExplicit,
+                parameters.FromDate,
+                parameters.ToDate);
+
             if (results == null || results.Count == 0)
                 return NotFound("No results found");
+
             return Ok(results);
         }
+
 
         /// <summary>
         /// Search collections by title and authorId, excluding favorite collections.
