@@ -3,6 +3,7 @@
 using muZilla.Services;
 using muZilla.Models;
 using muZilla.DTOs;
+using System.Drawing;
 
 namespace muZilla.Controllers
 {
@@ -33,7 +34,7 @@ namespace muZilla.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<Image?> GetImageById(int id)
+        public async Task<Models.Image?> GetImageById(int id)
         {
             return await _imageService.GetImageById(id);
         }
@@ -55,21 +56,6 @@ namespace muZilla.Controllers
         {
             await _imageService.DeleteImageByIdAsync(id);
             return Ok();
-        }
-
-        private static async Task<byte[]> ConvertToBytesAsync(IFormFile file)
-        {
-
-            using var memoryStream = new MemoryStream();
-            await file.CopyToAsync(memoryStream);
-            byte[] fileBytes = memoryStream.ToArray();
-            return fileBytes;
-        }
-
-        [HttpGet("domaincolor")]
-        public async Task<string> UploadFileAsync(IFormFile file)
-        {
-            return _fileStorageService.GetDomainColor(await ConvertToBytesAsync(file));
         }
     }
 
