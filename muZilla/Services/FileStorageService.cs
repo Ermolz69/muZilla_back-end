@@ -88,7 +88,7 @@ namespace muZilla.Services
             }
         }
 
-        public async Task<byte[]?> ReadFileFromSongAsync(string login, int songId, string filename, AccessLevel ac)
+        public async Task<byte[]?> ReadFileFromSongAsync(string login, int songId, string filename, AccessLevel? ac)
         {
             ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(login);
 
@@ -96,7 +96,7 @@ namespace muZilla.Services
 
             ShareFileClient fileClient = subdirClient.GetFileClient(filename);
 
-            if (filename.EndsWith(".mp3")) if (!ac.CanDownload) throw new Exception("No vip no chip");
+            if (filename.EndsWith(".mp3")) if (ac != null) if (!ac.CanDownload) throw new Exception("No vip no chip");
 
             try
             {

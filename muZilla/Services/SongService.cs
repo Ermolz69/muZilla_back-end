@@ -15,8 +15,18 @@ namespace muZilla.Services
             _context = context;
         }
 
+        public async Task UpdateCoverIdOnly(int songId, int coverId)
+        {
+            Song song = _context.Songs.Select(s => s).Where(s => s.Id == songId).FirstOrDefault();
+            song.Cover = _context.Images.Select(i => i).Where(i => i.Id == coverId).FirstOrDefault();
+            _context.Update(song);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<int> CreateSongAsync(SongDTO songDTO)
         {
+            Image? image = await _context.Images.FindAsync(songDTO.ImageId);
+
             Song song = new Song()
             {
                 Title = songDTO.Title,
@@ -27,7 +37,7 @@ namespace muZilla.Services
                 PublishDate = songDTO.PublishDate,
                 RemixesAllowed = songDTO.RemixesAllowed,
                 HasExplicitLyrics = songDTO.HasExplicitLyrics,
-                Cover = await _context.Images.FindAsync(songDTO.ImageId),
+                Cover = image,
             };
 
             if (songDTO.OriginalId != null)

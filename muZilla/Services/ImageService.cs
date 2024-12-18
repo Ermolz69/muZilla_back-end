@@ -10,21 +10,40 @@ namespace muZilla.Services
     public class ImageService
     {
         private readonly MuzillaDbContext _context;
+        private readonly FileStorageService _fileStorageService;
 
-        public ImageService(MuzillaDbContext context)
+        public ImageService(MuzillaDbContext context, FileStorageService fileStorageService)
         {
             _context = context;
+            _fileStorageService = fileStorageService;
         }
 
         public async Task CreateImageAsync(ImageDTO imageDTO)
         {
-            var image = new Models.Image()
+            string[] st = imageDTO.ImageFilePath.Split('/');
+            var imageBytes = await _fileStorageService.ReadFileFromSongAsync(st[0], int.Parse(st[1]), st[2], null);
+            var pixels = new List<Color>();
+
+            using var memoryStream = new MemoryStream(imageBytes);
+
+            using var image = new Bitmap(memoryStream);
+
+            for (int y = 0; y < image.Height; y++)
+            {
+                for (int x = 0; x < image.Width; x++)
+                {
+                    pixels.Add(image.GetPixel(x, y));
+                }
+            }
+
+            Color color = _fileStorageService.GetDominantColor(pixels);
+
+            var _image = new Models.Image()
             {
                 ImageFilePath = imageDTO.ImageFilePath,
-                DomainColor = imageDTO.DomainColor,
-            };
+                DomainColor = imageDTO.DomainColor != null ? imageDTO.DomainColor : $"{color.R},{color.G},{color.B}"};
 
-            _context.Images.Add(image);
+            _context.Images.Add(_image);
             await _context.SaveChangesAsync();
         }
 
@@ -42,7 +61,7 @@ namespace muZilla.Services
             {
                 image.ImageFilePath = imageDTO.ImageFilePath;
                 image.DomainColor = imageDTO.DomainColor;
-
+                    
                 _context.Images.Update(image);
                 await _context.SaveChangesAsync();
             }

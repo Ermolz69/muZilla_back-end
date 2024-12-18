@@ -16,8 +16,8 @@
         public int Views { get; set; }
 
         public virtual ICollection<User> Authors { get; set; }
-        public virtual Song Original { get; set; }
-        public virtual Image Cover { get; set; }
+        public virtual Song? Original { get; set; }
+        public virtual Image? Cover { get; set; }
         public virtual ICollection<Song> Remixes { get; set; }
     }
 }

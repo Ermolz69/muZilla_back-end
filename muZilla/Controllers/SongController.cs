@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using muZilla.Models;
 using muZilla.Services;
 using muZilla.DTOs;
+using muZilla.DTOs.Message;
+using System.Security.Claims;
 
 
 namespace muZilla.Controllers
@@ -63,61 +65,81 @@ namespace muZilla.Controllers
 
         [HttpPost("publish")]
         [Authorize]
-        public async Task<IActionResult> PublishSong([FromForm] IFormFile song, [FromForm] IFormFile? image, [FromForm] IFormFile? lyrics, [FromForm] SongDTO songDTO)
+        public async Task<IActionResult> PublishSong(
+            [FromForm] IFormFile song,
+            [FromForm] IFormFile? image,
+            [FromForm] IFormFile? lyrics,
+            [FromForm] SongDTO songDTO)
         {
-            Console.WriteLine("???? -> " + songDTO.ToString());
+            var login = User.FindFirst(ClaimTypes.Name)?.Value;
 
+            if (login == null)
+            {
+                return Unauthorized();
+            }
+
+            var receiverId = _userService.GetIdByLogin(login);
             string main_author = (await _userService.GetUserByIdAsync(songDTO.AuthorIds[0])).Login;
 
-            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = "a", DomainColor = "b" });
-
-            int id_img = _imageService.GetNewestAsync();
-
-            songDTO.ImageId = id_img;
-
             int id = await _songService.CreateSongAsync(songDTO);
-
             if (id == -1)
                 return BadRequest();
 
-            await _imageService.UpdateImageByIdAsync(id_img, new ImageDTO() { ImageFilePath = main_author + "/" + id.ToString() + "/cover.png", DomainColor = "<?>" });
-
-            using var memoryStream = new MemoryStream();
-
-            await song.CopyToAsync(memoryStream);
-            byte[] fileBytes = memoryStream.ToArray();
-
-            await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
-                main_author, 
-                id, 
-                "song.mp3", 
-                fileBytes);
-
-            if (lyrics != null)
+            // 1. Upload Song
+            using (var songStream = new MemoryStream())
             {
-                await lyrics.CopyToAsync(memoryStream);
-                fileBytes = memoryStream.ToArray();
+                await song.CopyToAsync(songStream);
+                byte[] songBytes = songStream.ToArray();
 
                 await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
                     main_author,
                     id,
-                    "lyrics.srt",
-                    fileBytes);
+                    "song.mp3",
+                    songBytes);
             }
 
+            // 2. Upload Lyrics (if exists)
+            if (lyrics != null)
+            {
+                using (var lyricsStream = new MemoryStream())
+                {
+                    await lyrics.CopyToAsync(lyricsStream);
+                    byte[] lyricsBytes = lyricsStream.ToArray();
+
+                    await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
+                        main_author,
+                        id,
+                        "lyrics.srt",
+                        lyricsBytes);
+                }
+            }
+
+            // 3. Upload Image (if exists)
             if (image != null)
             {
-                await image.CopyToAsync(memoryStream);
-                fileBytes = memoryStream.ToArray();
+                using (var imageStream = new MemoryStream())
+                {
+                    Console.WriteLine("Creating Image");
 
-                await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
-                    main_author,
-                    id,
-                    "cover.png",
-                    fileBytes);
+                    await image.CopyToAsync(imageStream);
+                    byte[] imageBytes = imageStream.ToArray();
+
+                    await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
+                        main_author,
+                        id,
+                        "cover.jpg",
+                        imageBytes);
+
+                    await _imageService.CreateImageAsync(new ImageDTO { ImageFilePath = $"{login}/{id}/cover.jpg" });
+
+                    await _songService.UpdateCoverIdOnly(id, _imageService.GetNewestAsync());
+
+                    Console.WriteLine("Created!");
+                }
             }
             else
             {
+                // Use Default Image
                 var rootPath = Directory.GetCurrentDirectory();
                 var filePath = Path.Combine(rootPath, "DefaultPictures", "default.png");
 
@@ -126,13 +148,13 @@ namespace muZilla.Controllers
                     return NotFound("Default image not found.");
                 }
 
-                fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+                byte[] defaultImageBytes = await System.IO.File.ReadAllBytesAsync(filePath);
 
                 await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
                     main_author,
                     id,
-                    "cover.png",
-                    fileBytes);
+                    "cover.jpg",
+                    defaultImageBytes);
             }
 
             return Ok();
