@@ -1,15 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization;
+
+using System.Text;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+
 using muZilla.Services;
 using muZilla.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using Microsoft.AspNetCore.Authorization;
+using muZilla.DTOs;
 
 namespace muZilla.Controllers
 {
@@ -99,7 +98,7 @@ namespace muZilla.Controllers
             }
 
             await _fileStorageService.CreateFileInDirectoryAsync(userDTO.Login, "pic.png", fileBytes);
-            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = userDTO.Login + "/pic.png", DomainColor = "69,1939,69" });
+            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = userDTO.Login + "/pic.png", DomainColor = "69,139,69" });
 
             userDTO.AccessLevelId = access_id;
             userDTO.ProfilePictureId = _imageService.GetNewestAsync();
@@ -119,17 +118,6 @@ namespace muZilla.Controllers
             return Ok(new { token });
         }
 
-        [HttpPost("ban")]
-        [Authorize]
-        public async Task<IActionResult> BanUserById(int id, int admin)
-        {
-            if (await _userService.BanUserByIdAsync(id, admin))
-            {
-                return Ok();
-            }
-            return BadRequest("Something got wrong. Go fuck yourself. Bitch.");
-        }
-
         [HttpGet("loginid")]
         public int GetIdByLogin(string login)
         {
@@ -145,7 +133,7 @@ namespace muZilla.Controllers
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, username), // Add the name claim
+                new Claim(ClaimTypes.Name, username),
                 new Claim("role", "User"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };

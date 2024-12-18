@@ -22,6 +22,52 @@ namespace muZilla.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Ban", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BanType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("BanUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("BannedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("BannedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BannedCollectionId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BannedSongId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BannedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BannedByUserId");
+
+                    b.HasIndex("BannedCollectionId");
+
+                    b.HasIndex("BannedSongId");
+
+                    b.HasIndex("BannedUserId");
+
+                    b.ToTable("Bans");
+                });
+
             modelBuilder.Entity("CollectionSong", b =>
                 {
                     b.Property<int>("CollectionId")
@@ -85,6 +131,12 @@ namespace muZilla.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("CanManageAL")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanManageReports")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanManageSupports")
                         .HasColumnType("bit");
 
                     b.Property<bool>("CanReport")
@@ -239,6 +291,43 @@ namespace muZilla.Migrations
                     b.ToTable("Messages");
                 });
 
+            modelBuilder.Entity("muZilla.Models.Report", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatorLogin")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Reports");
+                });
+
             modelBuilder.Entity("muZilla.Models.Song", b =>
                 {
                     b.Property<int>("Id")
@@ -293,6 +382,37 @@ namespace muZilla.Migrations
                     b.HasIndex("OriginalId");
 
                     b.ToTable("Songs");
+                });
+
+            modelBuilder.Entity("muZilla.Models.SupportMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReceiverLogin")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SenderLogin")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SupporterId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SupportMessages");
                 });
 
             modelBuilder.Entity("muZilla.Models.User", b =>
@@ -358,6 +478,38 @@ namespace muZilla.Migrations
                     b.HasIndex("ProfilePictureId");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Ban", b =>
+                {
+                    b.HasOne("muZilla.Models.User", "BannedByUser")
+                        .WithMany()
+                        .HasForeignKey("BannedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("muZilla.Models.Collection", "BannedCollection")
+                        .WithMany()
+                        .HasForeignKey("BannedCollectionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("muZilla.Models.Song", "BannedSong")
+                        .WithMany()
+                        .HasForeignKey("BannedSongId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("muZilla.Models.User", "BannedUser")
+                        .WithMany()
+                        .HasForeignKey("BannedUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BannedByUser");
+
+                    b.Navigation("BannedCollection");
+
+                    b.Navigation("BannedSong");
+
+                    b.Navigation("BannedUser");
                 });
 
             modelBuilder.Entity("CollectionSong", b =>

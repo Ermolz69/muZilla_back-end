@@ -1,16 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using muZilla.Models;
 using muZilla.Data;
-using muZilla.Models;
-using System.ComponentModel.DataAnnotations;
+using muZilla.DTOs;
+using System.Drawing;
+using System.Linq;
 
 
 namespace muZilla.Services
 {
-    public class ImageDTO
-    {
-        public string ImageFilePath { get; set; }
-        public string DomainColor { get; set; }
-    }
 
     public class ImageService
     {

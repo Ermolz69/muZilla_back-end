@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using muZilla.Models;
 using muZilla.Services;
 
 namespace muZilla.Controllers
@@ -9,10 +9,12 @@ namespace muZilla.Controllers
     public class FileStorageController : ControllerBase
     {
         private readonly FileStorageService _fileStorageService;
+        private readonly UserService _userService;
 
-        public FileStorageController(FileStorageService fileStorageService)
+        public FileStorageController(FileStorageService fileStorageService, UserService userService)
         {
             _fileStorageService = fileStorageService;
+            _userService = userService;
         }
 
         [HttpPost("createdirectory")]
@@ -119,7 +121,8 @@ namespace muZilla.Controllers
         {
             try
             {
-                byte[]? fileBytes = await _fileStorageService.ReadFileFromSongAsync(login, songId, filename);
+                User user = await _userService.GetUserByLoginAsync(login);
+                byte[]? fileBytes = await _fileStorageService.ReadFileFromSongAsync(login, songId, filename, user.AccessLevel);
 
                 if (fileBytes != null)
                 {
@@ -131,6 +134,26 @@ namespace muZilla.Controllers
             {
                 return BadRequest($"Error occurred: {ex.Message}");
             }
+        }
+
+        [HttpGet("stream")]
+        public IActionResult StreamMusic(string login, int songId, string filename)
+        {
+            var rangeHeader = Request.Headers.Range.FirstOrDefault();
+            MusicStreamResult? result = _fileStorageService.GetMusicStream(login, songId, filename, rangeHeader);
+
+            if (result == null)
+            {
+                return NotFound("File not found");
+            }
+
+            Stream stream;
+            string contentType;
+            bool enableRangeProcessing;
+
+            result.SetAll(out stream, out contentType, out enableRangeProcessing);
+
+            return File(stream, contentType, enableRangeProcessing: enableRangeProcessing);
         }
     }
 }

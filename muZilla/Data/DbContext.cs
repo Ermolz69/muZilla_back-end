@@ -19,12 +19,16 @@ namespace muZilla.Data
         public DbSet<BlockedUser> BlockedUsers { get; set; }
         public DbSet<AccessLevel> AccessLevels { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<SupportMessage> SupportMessages { get; set; }
+        public DbSet<Ban> Bans { get; set; }
+        public DbSet<Report> Reports { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Конфигурация связи один-ко-многим между User и AccessLevel
+            // Конфигурация связи один-ко-многим между User и AccessLevel 
             modelBuilder.Entity<User>()
                 .HasOne(u => u.AccessLevel)
                 .WithMany()
@@ -142,6 +146,30 @@ namespace muZilla.Data
                             .HasForeignKey("UserId")
                             .HasConstraintName("FK_UserLikedCollections_Users_UserId")
                             .OnDelete(DeleteBehavior.Cascade));
+
+            modelBuilder.Entity<Ban>()
+                .HasOne(b => b.BannedByUser)
+                .WithMany()
+                .HasForeignKey(b => b.BannedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Ban>()
+                .HasOne(b => b.BannedUser)
+                .WithMany()
+                .HasForeignKey(b => b.BannedUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Ban>()
+                .HasOne(b => b.BannedSong)
+                .WithMany()
+                .HasForeignKey(b => b.BannedSongId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Ban>()
+                .HasOne(b => b.BannedCollection)
+                .WithMany()
+                .HasForeignKey(b => b.BannedCollectionId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

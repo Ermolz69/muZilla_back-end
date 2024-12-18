@@ -1,26 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using muZilla.Data;
 using muZilla.Models;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using muZilla.DTOs;
 
 namespace muZilla.Services
 {
-    public class CollectionDTO
-    {
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public int ViewingAccess { get; set; }
-        public bool IsFavorite { get; set; }
-        public bool IsBanned { get; set; }
-        public int? AuthorId { get; set; }
-        public int? CoverId { get; set; }
-        public List<int> SongIds { get; set; } = new List<int>();
-
-
-    }
-
     public class CollectionService
     {
         private readonly MuzillaDbContext _context;

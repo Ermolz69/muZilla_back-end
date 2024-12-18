@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+
 using muZilla.Services;
 using muZilla.Models;
+using muZilla.DTOs;
 
 namespace muZilla.Controllers
 {
@@ -9,10 +11,12 @@ namespace muZilla.Controllers
     public class ImageController : ControllerBase
     {
         private readonly ImageService _imageService;
+        private readonly FileStorageService _fileStorageService;
 
-        public ImageController(ImageService imageService)
+        public ImageController(ImageService imageService, FileStorageService fileStorageService)
         {
             _imageService = imageService;
+            _fileStorageService = fileStorageService;
         }
 
         [HttpPost("create")]
@@ -51,6 +55,21 @@ namespace muZilla.Controllers
         {
             await _imageService.DeleteImageByIdAsync(id);
             return Ok();
+        }
+
+        private static async Task<byte[]> ConvertToBytesAsync(IFormFile file)
+        {
+
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+            byte[] fileBytes = memoryStream.ToArray();
+            return fileBytes;
+        }
+
+        [HttpGet("domaincolor")]
+        public async Task<string> UploadFileAsync(IFormFile file)
+        {
+            return _fileStorageService.GetDomainColor(await ConvertToBytesAsync(file));
         }
     }
 

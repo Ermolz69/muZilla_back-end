@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using muZilla.Services;
-using muZilla.Models;
-using System.Collections.Generic;
+
 using System.Security.Claims;
-using System.Threading.Tasks;
+
+using muZilla.Models;
+using muZilla.Services;
+using muZilla.DTOs.Message;
 
 namespace muZilla.Controllers
 {
@@ -64,6 +65,26 @@ namespace muZilla.Controllers
             }
 
             var messages = await _chatService.GetMessagesAsync(userLogin, otherUserLogin);
+            return Ok(messages);
+        }
+
+        [HttpGet("chats/{otherUserLogin}")]
+        public async Task<ActionResult<LastMessageDTO>> GetLatestChats(string otherUserLogin)
+        {
+            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+
+            if (userLogin == null)
+            {
+                return Unauthorized();
+            }
+
+            var otherUserId = _userService.GetIdByLogin(otherUserLogin);
+            if (otherUserId == -1)
+            {
+                return BadRequest("Другой пользователь не найден.");
+            }
+
+            var messages = await _chatService.GetChats(otherUserLogin, 10);
             return Ok(messages);
         }
     }

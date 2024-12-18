@@ -1,9 +1,32 @@
 ﻿using Azure;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
+using muZilla.Models;
+using System.Drawing;
 
 namespace muZilla.Services
 {
+    public class MusicStreamResult
+    {
+        private FileStream fileStream;
+        private string v1;
+        private bool v2;
+
+        public MusicStreamResult(FileStream fileStream, string v1, bool v2)
+        {
+            this.fileStream = fileStream;
+            this.v1 = v1;
+            this.v2 = v2;
+        }
+
+        public void SetAll(out Stream stream, out string _v1, out bool _v2)
+        {
+            stream = fileStream;
+            _v1 = v1;
+            _v2 = v2;
+        }
+    }
+
     public class FileStorageService
     {
         static string connectionString = string.Empty;
@@ -64,13 +87,15 @@ namespace muZilla.Services
             }
         }
 
-        public async Task<byte[]?> ReadFileFromSongAsync(string login, int songId, string filename)
+        public async Task<byte[]?> ReadFileFromSongAsync(string login, int songId, string filename, AccessLevel ac)
         {
             ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(login);
 
             ShareDirectoryClient subdirClient = directoryClient.GetSubdirectoryClient(songId.ToString());
 
             ShareFileClient fileClient = subdirClient.GetFileClient(filename);
+
+            if (filename.EndsWith(".mp3")) if (!ac.CanDownload) throw new Exception("No vip no chip");
 
             try
             {
@@ -118,6 +143,61 @@ namespace muZilla.Services
             {
                 await fileClient.UploadRangeAsync(new HttpRange(0, fileBytes.Length), stream);
             }
+        }
+
+        public MusicStreamResult? GetMusicStream(string login, int songId, string filename, string rangeHeader)
+        {
+            ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(login);
+            ShareDirectoryClient subdirClient = directoryClient.GetSubdirectoryClient(songId.ToString());
+            ShareFileClient fileClient = subdirClient.GetFileClient(filename);
+
+            HttpRange? range = null;
+
+            if (!string.IsNullOrEmpty(rangeHeader) && rangeHeader.StartsWith("bytes=", StringComparison.OrdinalIgnoreCase))
+            {
+                var rangeParts = rangeHeader.Substring("bytes=".Length).Split('-');
+                if (rangeParts.Length > 0 && long.TryParse(rangeParts[0], out long startBytes))
+                {
+                    if (rangeParts.Length > 1 && !string.IsNullOrEmpty(rangeParts[1]) && long.TryParse(rangeParts[1], out long endBytes))
+                    {
+                        long length = endBytes - startBytes + 1;
+                        if (length > 0)
+                        {
+                            range = new HttpRange(startBytes, length);
+                        }
+                    }
+                    else
+                    {
+                        range = new HttpRange(startBytes);
+                    }
+                }
+            }
+
+            ShareFileDownloadOptions downloadOptions = null;
+            if (range.HasValue)
+            {
+                downloadOptions = new ShareFileDownloadOptions
+                {
+                    Range = range.Value
+                };
+            }
+
+            Response<ShareFileDownloadInfo> downloadResponse =
+                downloadOptions != null ? fileClient.Download(downloadOptions) : fileClient.Download();
+
+            string tempFilePath = Path.GetTempFileName();
+            using (var fileStream = File.OpenWrite(tempFilePath))
+            {
+                downloadResponse.Value.Content.CopyTo(fileStream);
+            }
+
+            var finalStream = File.OpenRead(tempFilePath);
+            return new MusicStreamResult(finalStream, "audio/mpeg", true);
+        }
+
+        public string GetDomainColor(byte[] pic)
+        {
+            return null;
         }
     }
 }

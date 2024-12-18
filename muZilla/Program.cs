@@ -5,6 +5,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 
 namespace muZilla
 {
@@ -25,7 +26,7 @@ namespace muZilla
             builder.Services.AddDbContext<MuzillaDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Register your custom services
+            // Register custom services
             builder.Services.AddScoped<AccessLevelService>();
             builder.Services.AddScoped<ImageService>();
             builder.Services.AddScoped<ChatService>();
@@ -35,6 +36,10 @@ namespace muZilla
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<SongService>();
             builder.Services.AddScoped<CollectionService>();
+            builder.Services.AddScoped<SearchService>();
+            builder.Services.AddScoped<BanService>();
+            builder.Services.AddScoped<ReportService>();
+            builder.Services.AddScoped<TechSupportService>();
 
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
@@ -43,7 +48,6 @@ namespace muZilla
                     options.JsonSerializerOptions.WriteIndented = true;
                 });
 
-            // JWT Authentication configuration
             var jwtSettings = builder.Configuration.GetSection("Jwt");
             var key = jwtSettings["Key"];
             var issuer = jwtSettings["Issuer"];
@@ -71,6 +75,18 @@ namespace muZilla
 
             builder.Services.AddAuthorization();
 
+            // CORS policy configuration
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAngular", policy =>
+                {
+                    policy.WithOrigins("http://localhost:4200") // URL твоего Angular приложения
+                          .AllowAnyHeader() // Разрешить любые заголовки
+                          .AllowAnyMethod() // Разрешить любые методы (GET, POST и т.д.)
+                          .AllowCredentials(); // Разрешить передачу куков или токенов
+                });
+            });
+
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -79,8 +95,13 @@ namespace muZilla
                 app.UseSwaggerUI();
             }
 
+            // Использование CORS
+            app.UseCors("AllowAngular");
+
             app.UseAuthentication();
             app.UseAuthorization();
+
+            
 
             app.MapControllers();
 

@@ -1,16 +1,10 @@
 ﻿using Azure;
-using Azure.Core;
 using Azure.Data.Tables;
-using Azure.Storage.Files.Shares;
-using Azure.Storage.Queues;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
+
 using Microsoft.EntityFrameworkCore;
 using muZilla.Data;
 using muZilla.Models;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Text;
+
 
 namespace muZilla.Services
 {
