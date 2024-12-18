@@ -196,17 +196,9 @@ namespace muZilla.Services
             return new MusicStreamResult(finalStream, "audio/mpeg", true);
         }
 
+        #region color
 
-
-
-
-
-
-
-
-
-
-        public static Color GetDominantColor(List<Color> pixels, int k = 5, int maxIterations = 100)
+        public Color GetDominantColor(List<Color> pixels, int k = 5, int maxIterations = 100)
         {
             if (pixels == null || pixels.Count == 0)
                 return Color.Black;
@@ -317,5 +309,7 @@ namespace muZilla.Services
 
             return newCentroids;
         }
+
+        #endregion
     }
 }

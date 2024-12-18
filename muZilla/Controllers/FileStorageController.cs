@@ -185,12 +185,7 @@ namespace muZilla.Controllers
 
                 Color dominantColor = _fileStorageService.GetDominantColor(pixels);
 
-                return Ok(new
-                {
-                    Red = dominantColor.R,
-                    Green = dominantColor.G,
-                    Blue = dominantColor.B
-                });
+                return Ok($"{dominantColor.R},{dominantColor.G},{dominantColor.B}");
             }
             catch (Exception ex)
             {

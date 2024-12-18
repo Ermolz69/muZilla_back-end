@@ -18,7 +18,7 @@ namespace muZilla.Services
 
         public async Task CreateImageAsync(ImageDTO imageDTO)
         {
-            var image = new Image()
+            var image = new Models.Image()
             {
                 ImageFilePath = imageDTO.ImageFilePath,
                 DomainColor = imageDTO.DomainColor,
@@ -28,7 +28,7 @@ namespace muZilla.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Image?> GetImageById(int id)
+        public async Task<Models.Image?> GetImageById(int id)
         {
             var image = await _context.Images.FindAsync(id);
 
