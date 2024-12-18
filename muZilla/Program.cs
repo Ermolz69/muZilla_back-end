@@ -75,6 +75,18 @@ namespace muZilla
 
             builder.Services.AddAuthorization();
 
+            // CORS policy configuration
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAngular", policy =>
+                {
+                    policy.WithOrigins("http://localhost:4200") // URL твоего Angular приложения
+                          .AllowAnyHeader() // Разрешить любые заголовки
+                          .AllowAnyMethod() // Разрешить любые методы (GET, POST и т.д.)
+                          .AllowCredentials(); // Разрешить передачу куков или токенов
+                });
+            });
+
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -83,8 +95,13 @@ namespace muZilla
                 app.UseSwaggerUI();
             }
 
+            // Использование CORS
+            app.UseCors("AllowAngular");
+
             app.UseAuthentication();
             app.UseAuthorization();
+
+            
 
             app.MapControllers();
 
