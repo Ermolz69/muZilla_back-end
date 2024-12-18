@@ -122,8 +122,8 @@ namespace muZilla.Controllers
         {
             try
             {
-                User user = await _userService.GetUserByLoginAsync(login);
-                byte[]? fileBytes = await _fileStorageService.ReadFileFromSongAsync(login, songId, filename, user.AccessLevel);
+                User? user = await _userService.GetUserByLoginAsync(login);
+                byte[]? fileBytes = await _fileStorageService.ReadFileFromSongAsync(login, songId, filename, user != null ? user.AccessLevel : null);
 
                 if (fileBytes != null)
                 {
