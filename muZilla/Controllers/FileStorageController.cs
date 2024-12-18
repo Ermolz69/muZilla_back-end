@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Drawing;
+using Microsoft.AspNetCore.Mvc;
 using muZilla.Models;
 using muZilla.Services;
 
@@ -154,6 +155,47 @@ namespace muZilla.Controllers
             result.SetAll(out stream, out contentType, out enableRangeProcessing);
 
             return File(stream, contentType, enableRangeProcessing: enableRangeProcessing);
+        }
+
+        [HttpPost("dominantcolor")]
+        public async Task<IActionResult> GetDominantColorFromImage(IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest("Invalid file upload.");
+                }
+
+                using var memoryStream = new MemoryStream();
+                await file.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+
+                using var image = new Bitmap(memoryStream);
+
+                var pixels = new List<Color>();
+
+                for (int y = 0; y < image.Height; y++)
+                {
+                    for (int x = 0; x < image.Width; x++)
+                    {
+                        pixels.Add(image.GetPixel(x, y));
+                    }
+                }
+
+                Color dominantColor = _fileStorageService.GetDominantColor(pixels);
+
+                return Ok(new
+                {
+                    Red = dominantColor.R,
+                    Green = dominantColor.G,
+                    Blue = dominantColor.B
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
     }
 }

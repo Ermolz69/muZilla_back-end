@@ -3,7 +3,7 @@ using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
 using muZilla.Models;
 using System.Drawing;
-using 
+// using 
 
 namespace muZilla.Services
 {
@@ -196,9 +196,126 @@ namespace muZilla.Services
             return new MusicStreamResult(finalStream, "audio/mpeg", true);
         }
 
-        public string GetDomainColor(byte[] pic)
+
+
+
+
+
+
+
+
+
+
+        public static Color GetDominantColor(List<Color> pixels, int k = 5, int maxIterations = 100)
         {
-            
+            if (pixels == null || pixels.Count == 0)
+                return Color.Black;
+
+            if (k <= 0)
+                throw new ArgumentException("k must be greater than 0");
+
+            Random rand = new Random();
+            List<Color> centroids = new List<Color>();
+            for (int i = 0; i < k; i++)
+            {
+                centroids.Add(pixels[rand.Next(pixels.Count)]);
+            }
+
+            int[] assignments = new int[pixels.Count];
+            bool changed = true;
+            int iteration = 0;
+
+            while (changed && iteration < maxIterations)
+            {
+                changed = false;
+                iteration++;
+
+                for (int i = 0; i < pixels.Count; i++)
+                {
+                    int nearestCluster = FindNearestCluster(pixels[i], centroids);
+                    if (assignments[i] != nearestCluster)
+                    {
+                        assignments[i] = nearestCluster;
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    centroids = RecalculateCentroids(pixels, assignments, k);
+                }
+            }
+
+            var clusterCounts = new Dictionary<int, int>();
+            for (int i = 0; i < assignments.Length; i++)
+            {
+                int c = assignments[i];
+                if (!clusterCounts.ContainsKey(c))
+                    clusterCounts[c] = 0;
+                clusterCounts[c]++;
+            }
+
+            int dominantCluster = clusterCounts.OrderByDescending(x => x.Value).First().Key;
+            return centroids[dominantCluster];
+        }
+
+        private static int FindNearestCluster(Color pixel, List<Color> centroids)
+        {
+            int nearestCluster = 0;
+            double minDist = double.MaxValue;
+            for (int i = 0; i < centroids.Count; i++)
+            {
+                double dist = ColorDistance(pixel, centroids[i]);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    nearestCluster = i;
+                }
+            }
+            return nearestCluster;
+        }
+
+        private static double ColorDistance(Color c1, Color c2)
+        {
+            int dr = c1.R - c2.R;
+            int dg = c1.G - c2.G;
+            int db = c1.B - c2.B;
+            return Math.Sqrt(dr * dr + dg * dg + db * db);
+        }
+
+        private static List<Color> RecalculateCentroids(List<Color> pixels, int[] assignments, int k)
+        {
+            int[] counts = new int[k];
+            long[] sumR = new long[k];
+            long[] sumG = new long[k];
+            long[] sumB = new long[k];
+
+            for (int i = 0; i < pixels.Count; i++)
+            {
+                int cluster = assignments[i];
+                counts[cluster]++;
+                sumR[cluster] += pixels[i].R;
+                sumG[cluster] += pixels[i].G;
+                sumB[cluster] += pixels[i].B;
+            }
+
+            List<Color> newCentroids = new List<Color>(k);
+            for (int i = 0; i < k; i++)
+            {
+                if (counts[i] == 0)
+                {
+                    newCentroids.Add(Color.FromArgb(0, 0, 0));
+                }
+                else
+                {
+                    int r = (int)(sumR[i] / counts[i]);
+                    int g = (int)(sumG[i] / counts[i]);
+                    int b = (int)(sumB[i] / counts[i]);
+                    newCentroids.Add(Color.FromArgb(r, g, b));
+                }
+            }
+
+            return newCentroids;
         }
     }
 }
