@@ -215,5 +215,11 @@ namespace muZilla.Controllers
             return Ok();
         }
 
+        [HttpPost("view/{songId}")]
+        public async Task<IActionResult> AddOneView(int songId)
+        {
+            await _songService.AddOneView(songId);
+            return Ok();
+        }
     }
 }

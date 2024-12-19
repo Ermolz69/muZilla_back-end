@@ -154,6 +154,14 @@ namespace muZilla.Services
             return filteredSongs;
         }
 
+        public async Task AddOneView(int songId)
+        {
+            Song? song = await GetSongByIdAsync(songId);
+            if (song != null) song.Views += 1;
+            else return;
+            _context.Songs.Update(song);
+            await _context.SaveChangesAsync();
+        }
       
         public async Task ToggleLikeSongAsync(int userId, int songId)
         {
