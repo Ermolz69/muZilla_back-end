@@ -3,6 +3,8 @@
 using muZilla.Data;
 using muZilla.Models;
 using muZilla.DTOs;
+using System.Net.Mail;
+using System.Net;
 
 namespace muZilla.Services
 {
@@ -10,10 +12,12 @@ namespace muZilla.Services
     {
         private readonly MuzillaDbContext _context;
         private readonly AccessLevelService _accessLevelService;
+        private readonly IConfiguration _config;
 
-        public UserService(MuzillaDbContext context)
+        public UserService(MuzillaDbContext context, IConfiguration config)
         {
             _context = context;
+            _config = config;
         }
 
         /// <summary>
@@ -250,6 +254,52 @@ namespace muZilla.Services
             return await _context.Users
                 .Include(u => u.AccessLevel)
                 .FirstOrDefaultAsync(u => u.Login == login);
+        }
+
+        /// <summary>
+        /// Sends a welcome email to the specified recipient using Gmail's SMTP server.
+        /// </summary>
+        /// <param name="login">The username of the recipient, included in the welcome message.</param>
+        /// <param name="email">The recipient's email address to which the welcome email is sent.</param>
+        /// <remarks>
+        /// Configures Gmail's SMTP server with SSL enabled for secure email transmission.
+        /// </remarks>
+        public async Task SendEmail(string login, string email)
+        {
+            try
+            {
+                string smtpServer = "smtp.gmail.com";
+                int smtpPort = 587;
+                string senderEmail = _config["EmailSMTP:Email"];
+                string senderPassword = _config["EmailSMTP:Password"];
+
+                string recipientEmail = email;
+                string subject = "Welcome to MUZILLA!!!";
+                string body = $"Welcome aboard, {login}! You have registered in our website.\n\nLet's work together!";
+
+                SmtpClient smtpClient = new SmtpClient(smtpServer, smtpPort)
+                {
+                    Credentials = new NetworkCredential(senderEmail, senderPassword),
+                    EnableSsl = true
+                };
+
+                MailMessage mailMessage = new MailMessage
+                {
+                    From = new MailAddress(senderEmail),
+                    Subject = subject,
+                    Body = body,
+                    IsBodyHtml = false
+                };
+                mailMessage.To.Add(recipientEmail);
+
+                smtpClient.Send(mailMessage);
+
+                Console.WriteLine("Письмо успешно отправлено!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при отправке письма: {ex.Message}");
+            }
         }
     }
 }

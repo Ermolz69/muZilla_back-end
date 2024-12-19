@@ -4,7 +4,7 @@
     {
         public string Title { get; set; }
         public string Description { get; set; }
-        public int? Length { get; set; }
+        public int Length { get; set; }
         public string Genres { get; set; }
         public bool RemixesAllowed { get; set; }
         public DateTime PublishDate { get; set; }

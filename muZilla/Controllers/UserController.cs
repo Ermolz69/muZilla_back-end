@@ -9,6 +9,8 @@ using System.IdentityModel.Tokens.Jwt;
 using muZilla.Services;
 using muZilla.Models;
 using muZilla.DTOs;
+using System.Net.Mail;
+using System.Net;
 
 namespace muZilla.Controllers
 {
@@ -140,7 +142,8 @@ namespace muZilla.Controllers
             userDTO.AccessLevelId = access_id;
             userDTO.ProfilePictureId = _imageService.GetNewestAsync();
 
-            _userService.CreateUserAsync(userDTO);
+            await _userService.CreateUserAsync(userDTO);
+            await _userService.SendEmail(userDTO.Login, userDTO.Email);
 
             return Ok();
         }
