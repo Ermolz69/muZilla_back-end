@@ -178,12 +178,6 @@ namespace muZilla.Services
             if (user == null)
                 return;
 
-            // Удаляем уровень доступа через сервис
-            if (user.AccessLevel != null)
-            {
-                await _accessLevelService.DeleteAccessLevelByIdAsync(user.AccessLevel.Id);
-            }
-
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
         }
