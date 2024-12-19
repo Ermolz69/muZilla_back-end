@@ -14,6 +14,7 @@ namespace muZilla.Services
         {
             _context = context;
             _userService = userService;
+            _userService._accessLevelService = this;
         }
 
         /// <summary>

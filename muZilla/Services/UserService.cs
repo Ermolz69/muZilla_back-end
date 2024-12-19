@@ -11,7 +11,7 @@ namespace muZilla.Services
     public class UserService
     {
         private readonly MuzillaDbContext _context;
-        private readonly AccessLevelService _accessLevelService;
+        public AccessLevelService _accessLevelService;
         private readonly CollectionService _collectionService;
         private readonly IConfiguration _config;
 
@@ -173,10 +173,14 @@ namespace muZilla.Services
         {
             User? user = await _context.Users
                 .Include(u => u.AccessLevel)
+                .Include(u => u.FavoritesCollection)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
             if (user == null)
                 return;
+
+            _context.Collections.Remove(user.FavoritesCollection);
+            await _context.SaveChangesAsync();
 
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();

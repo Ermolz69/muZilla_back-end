@@ -33,7 +33,7 @@ namespace muZilla.Data
                 .HasOne(u => u.AccessLevel)
                 .WithMany()
                 .HasForeignKey("AccessLevelId")
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Конфигурация связи один-ко-многим между User и ProfilePicture (Image)
             modelBuilder.Entity<User>()
@@ -97,7 +97,7 @@ namespace muZilla.Data
                 .HasOne(c => c.Author)
                 .WithMany()
                 .HasForeignKey("AuthorId")
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Конфигурация связи один-ко-многим между Collection и Cover (Image)
             modelBuilder.Entity<Collection>()
