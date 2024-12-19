@@ -31,7 +31,7 @@ namespace muZilla.Services
             {
                 Title = songDTO.Title,
                 Description = songDTO.Description,
-                Length = songDTO.Length,
+                Length = songDTO.Length ?? 0,
                 Genres = songDTO.Genres,
                 OriginalId = songDTO.OriginalId,
                 PublishDate = songDTO.PublishDate,
@@ -96,7 +96,7 @@ namespace muZilla.Services
 
             song.Title = songDTO.Title;
             song.Description = songDTO.Description;
-            song.Length = songDTO.Length;
+            song.Length = songDTO.Length ?? song.Length;
             song.Genres = songDTO.Genres;
             song.RemixesAllowed = songDTO.RemixesAllowed;
             song.PublishDate = songDTO.PublishDate;

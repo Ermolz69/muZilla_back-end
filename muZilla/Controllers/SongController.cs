@@ -6,6 +6,8 @@ using muZilla.Services;
 using muZilla.DTOs;
 using muZilla.DTOs.Message;
 using System.Security.Claims;
+using System.Diagnostics;
+using NAudio.Wave;
 
 
 namespace muZilla.Controllers
@@ -79,26 +81,63 @@ namespace muZilla.Controllers
             }
 
             var receiverId = _userService.GetIdByLogin(login);
+
+
+            TimeSpan duration;
+            byte[] songBytes;
+
+            string tempFilePath = Path.GetTempFileName();
+
+            try
+            {
+                using (var ms = new MemoryStream())
+                {
+                    await song.CopyToAsync(ms);
+                    songBytes = ms.ToArray();
+                }
+
+                await System.IO.File.WriteAllBytesAsync(tempFilePath, songBytes);
+
+                using (var reader = new AudioFileReader(tempFilePath))
+                {
+                    duration = reader.TotalTime;
+                }
+
+                songDTO.Length = (int)duration.TotalSeconds;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при обработке файла: {ex.Message}");
+                return BadRequest($"Ошибка при обработке файла: {ex.Message}");
+            }
+            finally
+            {
+                if (System.IO.File.Exists(tempFilePath))
+                {
+                    try
+                    {
+                        System.IO.File.Delete(tempFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Не удалось удалить временный файл: {ex.Message}");
+                    }
+                }
+            }
+
+
             string main_author = (await _userService.GetUserByIdAsync(songDTO.AuthorIds[0])).Login;
 
             int id = await _songService.CreateSongAsync(songDTO);
             if (id == -1)
                 return BadRequest();
 
-            // 1. Upload Song
-            using (var songStream = new MemoryStream())
-            {
-                await song.CopyToAsync(songStream);
-                byte[] songBytes = songStream.ToArray();
+            await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
+                main_author,
+                id,
+                "song.mp3",
+                songBytes);
 
-                await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
-                    main_author,
-                    id,
-                    "song.mp3",
-                    songBytes);
-            }
-
-            // 2. Upload Lyrics (if exists)
             if (lyrics != null)
             {
                 using (var lyricsStream = new MemoryStream())
@@ -114,7 +153,6 @@ namespace muZilla.Controllers
                 }
             }
 
-            // 3. Upload Image (if exists)
             if (image != null)
             {
                 using (var imageStream = new MemoryStream())
@@ -139,7 +177,6 @@ namespace muZilla.Controllers
             }
             else
             {
-                // Use Default Image
                 var rootPath = Directory.GetCurrentDirectory();
                 var filePath = Path.Combine(rootPath, "DefaultPictures", "default.jpg");
 
@@ -159,6 +196,7 @@ namespace muZilla.Controllers
 
             return Ok();
         }
+
 
         [HttpGet("getbykeyword")]
         public Task<List<Song>> GetSongsByKeyWord(string? search, FilterDTO filterDTO)
