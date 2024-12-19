@@ -154,7 +154,8 @@ namespace muZilla.Services
             return filteredSongs;
         }
 
-        public async Task LikeSongAsync(int userId, int songId)
+      
+        public async Task ToggleLikeSongAsync(int userId, int songId)
         {
             var user = await _context.Users
                 .Include(u => u.FavoritesCollection)
@@ -174,8 +175,8 @@ namespace muZilla.Services
                     IsBanned = false,
                     Author = user,
                     Songs = new List<Song>(),
-                    Cover = new Image() 
-                    { 
+                    Cover = new Image()
+                    {
                         ImageFilePath = "DEFAULT/default.png",
                         DomainColor = "125,125,125"
                     }
@@ -186,39 +187,27 @@ namespace muZilla.Services
 
                 user.FavoritesCollectionId = favoritesCollection.Id;
                 user.FavoritesCollection = favoritesCollection;
-                await _context.SaveChangesAsync();
             }
 
             var song = await _context.Songs.FindAsync(songId);
 
             if (song == null) return;
 
-            if (!user.FavoritesCollection.Songs.Contains(song))
+            if (user.FavoritesCollection.Songs.Any(s => s.Id == songId))
+            {
+
+                var songToRemove = user.FavoritesCollection.Songs.First(s => s.Id == songId);
+                user.FavoritesCollection.Songs.Remove(songToRemove);
+                song.Likes--;
+
+            }
+            else
             {
                 user.FavoritesCollection.Songs.Add(song);
                 song.Likes++;
-                await _context.SaveChangesAsync();
             }
-        }
 
-
-        public async Task UnlikeSongAsync(int userId, int songId)
-        {
-            var user = await _context.Users
-                .Include(u => u.FavoritesCollection)
-                    .ThenInclude(c => c.Songs)
-                .FirstOrDefaultAsync(u => u.Id == userId);
-
-            var song = await _context.Songs.FindAsync(songId);
-
-            if (user == null || song == null) return;
-
-            if (user.FavoritesCollection.Songs.Contains(song))
-            {
-                user.FavoritesCollection.Songs.Remove(song);
-                song.Likes--;
-                await _context.SaveChangesAsync();
-            }
+            await _context.SaveChangesAsync();
         }
     }
 }

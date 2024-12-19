@@ -173,15 +173,7 @@ namespace muZilla.Controllers
         [Authorize]
         public async Task<IActionResult> LikeSong(int userId, int songId)
         {
-            await _songService.LikeSongAsync(userId, songId);
-            return Ok();
-        }
-
-        [HttpPost("unlikeSong/{songId}")]
-        [Authorize]
-        public async Task<IActionResult> UnlikeSong(int userId, int songId)
-        {
-            await _songService.UnlikeSongAsync(userId, songId);
+            await _songService.ToggleLikeSongAsync(userId, songId);
             return Ok();
         }
 
