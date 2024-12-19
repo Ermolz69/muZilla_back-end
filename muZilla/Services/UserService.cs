@@ -11,13 +11,6 @@ namespace muZilla.Services
         private readonly MuzillaDbContext _context;
         private readonly AccessLevelService _accessLevelService;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UserService"/> class with the specified database context.
-        /// </summary>
-        /// <param name="context">The <see cref="MuzillaDbContext"/> instance used to interact with the database.</param>
-        /// <remarks>
-        /// This constructor sets up the service to access the database and manage user-related operations.
-        /// </remarks>
         public UserService(MuzillaDbContext context)
         {
             _context = context;
@@ -245,12 +238,18 @@ namespace muZilla.Services
             }
         }
 
+        /// <summary>
+        /// Retrieves a user by their login.
+        /// </summary>
+        /// <param name="login">The login of the user to retrieve.</param>
+        /// <returns>
+        /// The user object if found, including their access level, or null if no matching user is found.
+        /// </returns>
         public async Task<User?> GetUserByLoginAsync(string login)
         {
             return await _context.Users
                 .Include(u => u.AccessLevel)
                 .FirstOrDefaultAsync(u => u.Login == login);
         }
-
     }
 }

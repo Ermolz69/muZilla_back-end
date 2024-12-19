@@ -18,6 +18,12 @@ namespace muZilla.Services
             _fileStorageService = fileStorageService;
         }
 
+        /// <summary>
+        /// Creates a new image record in the database, calculating its dominant color if not provided.
+        /// </summary>
+        /// <param name="imageDTO">The data transfer object containing image details, including file path and optional domain color.</param>
+        /// <returns>An asynchronous task representing the operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the image file cannot be read.</exception>
         public async Task CreateImageAsync(ImageDTO imageDTO)
         {
             string[] st = imageDTO.ImageFilePath.Split('/');
@@ -47,6 +53,11 @@ namespace muZilla.Services
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Retrieves an image by its unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the image.</param>
+        /// <returns>The image if found, or null if not found.</returns>
         public async Task<Models.Image?> GetImageById(int id)
         {
             var image = await _context.Images.FindAsync(id);
@@ -54,6 +65,12 @@ namespace muZilla.Services
             return image;
         }
 
+        /// <summary>
+        /// Updates an existing image record with new details.
+        /// </summary>
+        /// <param name="id">The unique identifier of the image to update.</param>
+        /// <param name="imageDTO">The data transfer object containing updated image details.</param>
+        /// <returns>An asynchronous task representing the update operation.</returns>
         public async Task UpdateImageByIdAsync(int id, ImageDTO imageDTO)
         {
             var image = await _context.Images.FindAsync(id);
@@ -67,6 +84,11 @@ namespace muZilla.Services
             }
         }
 
+        /// <summary>
+        /// Deletes an image by its unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the image to delete.</param>
+        /// <returns>An asynchronous task representing the deletion operation.</returns>
         public async Task DeleteImageByIdAsync(int id)
         {
             var image = await _context.Images.FindAsync(id);
@@ -77,6 +99,11 @@ namespace muZilla.Services
             }
         }
 
+        /// <summary>
+        /// Retrieves the ID of the most recently added image in the database.
+        /// </summary>
+        /// <returns>The unique identifier of the latest image.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if no images are found.</exception>
         public int GetNewestAsync()
         {
             var latestImage = _context.Images
@@ -90,6 +117,5 @@ namespace muZilla.Services
 
             return latestImage.Id;
         }
-
     }
 }

@@ -15,6 +15,12 @@ namespace muZilla.Services
             _context = context;
         }
 
+        /// <summary>
+        /// Updates the cover image of a song by its ID.
+        /// </summary>
+        /// <param name="songId">The unique identifier of the song.</param>
+        /// <param name="coverId">The unique identifier of the new cover image.</param>
+        /// <returns>An asynchronous task representing the update operation.</returns>
         public async Task UpdateCoverIdOnly(int songId, int coverId)
         {
             Song song = _context.Songs.Select(s => s).Where(s => s.Id == songId).FirstOrDefault();
@@ -23,6 +29,13 @@ namespace muZilla.Services
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Creates a new song based on the provided data transfer object (DTO).
+        /// </summary>
+        /// <param name="songDTO">The data transfer object containing song details.</param>
+        /// <returns>
+        /// The ID of the newly created song, or -1 if the song's original is not allowed to have remixes.
+        /// </returns>
         public async Task<int> CreateSongAsync(SongDTO songDTO)
         {
             Image? image = await _context.Images.FindAsync(songDTO.ImageId);
@@ -31,7 +44,7 @@ namespace muZilla.Services
             {
                 Title = songDTO.Title,
                 Description = songDTO.Description,
-                Length = songDTO.Length ?? 0,
+                Length = songDTO.Length,
                 Genres = songDTO.Genres,
                 OriginalId = songDTO.OriginalId,
                 PublishDate = songDTO.PublishDate,
@@ -61,6 +74,11 @@ namespace muZilla.Services
             return id;
         }
 
+        /// <summary>
+        /// Retrieves a song by its unique identifier, including its remixes.
+        /// </summary>
+        /// <param name="id">The unique identifier of the song.</param>
+        /// <returns>The song object if found, otherwise null.</returns>
         public async Task<Song> GetSongByIdAsync(int id)
         {
             var song = await _context.Songs
@@ -83,6 +101,15 @@ namespace muZilla.Services
             return song;
         }
 
+        /// <summary>
+        /// Updates an existing song by its ID with the provided details.
+        /// </summary>
+        /// <param name="id">The unique identifier of the song to update.</param>
+        /// <param name="songDTO">The data transfer object containing updated song details.</param>
+        /// <returns>
+        /// A status code indicating the result: 
+        /// 200 for success, 404 if the song is not found.
+        /// </returns>
         public async Task<int> UpdateSongByIdAsync(int id, SongDTO songDTO)
         {
             var song = await _context.Songs
@@ -96,7 +123,6 @@ namespace muZilla.Services
 
             song.Title = songDTO.Title;
             song.Description = songDTO.Description;
-            song.Length = songDTO.Length ?? song.Length;
             song.Genres = songDTO.Genres;
             song.RemixesAllowed = songDTO.RemixesAllowed;
             song.PublishDate = songDTO.PublishDate;
@@ -122,6 +148,11 @@ namespace muZilla.Services
             return 200;
         }
 
+        /// <summary>
+        /// Deletes a song by its unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the song to delete.</param>
+        /// <returns>An asynchronous task representing the deletion operation.</returns>
         public async Task DeleteSongByIdAsync(int id)
         {
             Song? song = await _context.Songs.FindAsync(id);
@@ -130,30 +161,11 @@ namespace muZilla.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<Song>> GetSongsByKeyWord(string search, FilterDTO filterDTO)
-        {
-            List<Song> filteredSongs = _context.Songs
-                .Include(s => s.Authors)
-                .Where(s =>
-                    (s.Title.Contains(search)
-                    || s.Description.Contains(search)
-                    || s.Authors.Any(a => a.Username.Contains(search))
-                    || s.Genres.Contains(search))
-                )
-                .AsEnumerable()
-                .Where(s => s.Genres.Split(", ").ToList().Count == filterDTO.Genres.Split(", ").ToList().Count
-                && !s.Genres.Split(", ").ToList().Except(filterDTO.Genres.Split(", ").ToList()).Any())
-                .Where(s =>
-                    (filterDTO.Remixes == null
-                    || (filterDTO.Remixes == true ? s.Original != null : s.Original == null))
-                    && (filterDTO.ShowBanned == false ? s.IsBanned == false : true)
-                )
-                .OrderBy(s => s.Likes * s.Views)
-                .ToList();
-
-            return filteredSongs;
-        }
-
+        /// <summary>
+        /// Increments the view count of a song by its ID.
+        /// </summary>
+        /// <param name="songId">The unique identifier of the song.</param>
+        /// <returns>An asynchronous task representing the operation.</returns>
         public async Task AddOneView(int songId)
         {
             Song? song = await GetSongByIdAsync(songId);
@@ -162,7 +174,13 @@ namespace muZilla.Services
             _context.Songs.Update(song);
             await _context.SaveChangesAsync();
         }
-      
+
+        /// <summary>
+        /// Toggles the like status of a song for a specific user.
+        /// </summary>
+        /// <param name="userId">The ID of the user liking or unliking the song.</param>
+        /// <param name="songId">The ID of the song to toggle like status.</param>
+        /// <returns>An asynchronous task representing the operation.</returns>
         public async Task ToggleLikeSongAsync(int userId, int songId)
         {
             var user = await _context.Users

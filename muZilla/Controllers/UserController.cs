@@ -31,8 +31,15 @@ namespace muZilla.Controllers
             _config = config;
         }
 
+        /// <summary>
+        /// Creates a new user.
+        /// </summary>
+        /// <param name="userDTO">The data transfer object containing user details.</param>
+        /// <returns>A 200 OK response upon successful creation, or a 400 Bad Request if the input is invalid.</returns>
         [HttpPost("create")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateUser(UserDTO userDTO)
         {
             if (!ModelState.IsValid)
@@ -44,14 +51,29 @@ namespace muZilla.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Retrieves a user by their unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the user.</param>
+        /// <returns>The user details.</returns>
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<User> GetUserByIdAsync(int id)
         {
             return await _userService.GetUserByIdAsync(id);
         }
 
+        /// <summary>
+        /// Updates a user by their unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the user to update.</param>
+        /// <param name="userDTO">The updated user data.</param>
+        /// <returns>A 200 OK response upon successful update, or a 400 Bad Request if the input is invalid.</returns>
         [HttpPatch("update/{id}")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateUserByIdAsync(int id, UserDTO userDTO)
         {
             if (!ModelState.IsValid)
@@ -63,15 +85,30 @@ namespace muZilla.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Deletes a user by their unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the user to delete.</param>
+        /// <returns>A 200 OK response upon successful deletion.</returns>
         [HttpDelete("delete/{id}")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> DeleteUserByIdAsync(int id)
         {
             await _userService.DeleteUserByIdAsync(id);
             return Ok();
         }
 
+        /// <summary>
+        /// Registers a new user along with their profile picture.
+        /// </summary>
+        /// <param name="userDTO">The data transfer object containing user details.</param>
+        /// <param name="profile">The profile picture file (optional).</param>
+        /// <returns>A 200 OK response upon successful registration, or a 404 Not Found if the default image is missing.</returns>
         [HttpPost("register")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> RegisterUserFullyAsync([FromForm] UserDTO userDTO, [FromForm] IFormFile? profile)
         {
             int access_id = await _accessLevelService.CreateDefaultAccessLevelAsync();
@@ -108,7 +145,17 @@ namespace muZilla.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Logs in a user and generates a JWT token.
+        /// </summary>
+        /// <param name="login">The user's login.</param>
+        /// <param name="password">The user's password.</param>
+        /// <returns>
+        /// A 200 OK response with the generated token, or a 400 Bad Request if the login credentials are invalid.
+        /// </returns>
         [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult Login(string login, string password)
         {
             int res = _userService.CanLogin(login, password);
@@ -118,12 +165,23 @@ namespace muZilla.Controllers
             return Ok(new { token });
         }
 
+        /// <summary>
+        /// Retrieves the user ID associated with a given login.
+        /// </summary>
+        /// <param name="login">The user's login.</param>
+        /// <returns>The user ID.</returns>
         [HttpGet("loginid")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public int GetIdByLogin(string login)
         {
             return _userService.GetIdByLogin(login);
         }
 
+        /// <summary>
+        /// Generates a JWT token for a given username.
+        /// </summary>
+        /// <param name="username">The username to generate the token for.</param>
+        /// <returns>The generated JWT token.</returns>
         private string GenerateJwtToken(string username)
         {
             var issuer = _config["Jwt:Issuer"];

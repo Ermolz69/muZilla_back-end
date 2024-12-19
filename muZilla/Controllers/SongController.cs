@@ -29,21 +29,44 @@ namespace muZilla.Controllers
             _imageService = imageService;
         }
 
+        /// <summary>
+        /// Creates a new song record.
+        /// </summary>
+        /// <param name="songDTO">The data transfer object containing details of the song to create.</param>
+        /// <returns>The ID of the newly created song.</returns>
         [HttpPost("create")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<int> CreateSong(SongDTO songDTO)
         {
             return await _songService.CreateSongAsync(songDTO);
         }
 
+        /// <summary>
+        /// Retrieves a song by its unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the song.</param>
+        /// <returns>The song details.</returns>
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<Song> GetSongByIdAsync(int id)
         {
             return await _songService.GetSongByIdAsync(id);
         }
 
+        /// <summary>
+        /// Updates a song by its unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the song to update.</param>
+        /// <param name="songDTO">The updated song data.</param>
+        /// <returns>A 200 OK response if successful, or appropriate error codes otherwise.</returns>
         [HttpPatch("update/{id}")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateSongByIdAsync(int id, SongDTO songDTO)
         {
             int resultCode = await _songService.UpdateSongByIdAsync(id, songDTO);
@@ -57,16 +80,35 @@ namespace muZilla.Controllers
         }
 
 
+        /// <summary>
+        /// Deletes a song by its unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the song to delete.</param>
+        /// <returns>A 200 OK response upon successful deletion.</returns>
         [HttpDelete("delete/{id}")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> DeleteSongByIdAsync(int id)
         {
             await _songService.DeleteSongByIdAsync(id);
             return Ok();
         }
 
+        /// <summary>
+        /// Publishes a song with its associated files (audio, image, lyrics).
+        /// </summary>
+        /// <param name="song">The audio file for the song.</param>
+        /// <param name="image">The optional image file for the song's cover.</param>
+        /// <param name="lyrics">The optional lyrics file for the song.</param>
+        /// <param name="songDTO">The data transfer object for the song details.</param>
+        /// <returns>A 200 OK response if successful, or appropriate error codes otherwise.</returns>
         [HttpPost("publish")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PublishSong(
             [FromForm] IFormFile song,
             [FromForm] IFormFile? image,
@@ -198,24 +240,28 @@ namespace muZilla.Controllers
         }
 
 
-        [HttpGet("getbykeyword")]
-        public Task<List<Song>> GetSongsByKeyWord(string? search, FilterDTO filterDTO)
-        {
-            if (search == null)
-                search = "";
-            return _songService.GetSongsByKeyWord(search, filterDTO);
-        }
-
-
+        /// <summary>
+        /// Toggles like status for a song by a user.
+        /// </summary>
+        /// <param name="userId">The ID of the user liking the song.</param>
+        /// <param name="songId">The ID of the song to like.</param>
+        /// <returns>A 200 OK response upon successful toggle.</returns>
         [HttpPost("likeSong/{songId}")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> LikeSong(int userId, int songId)
         {
             await _songService.ToggleLikeSongAsync(userId, songId);
             return Ok();
         }
 
+        /// <summary>
+        /// Adds a view count to a song.
+        /// </summary>
+        /// <param name="songId">The ID of the song to view.</param>
+        /// <returns>A 200 OK response upon successful increment.</returns>
         [HttpPost("view/{songId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> AddOneView(int songId)
         {
             await _songService.AddOneView(songId);

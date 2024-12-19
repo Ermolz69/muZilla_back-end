@@ -23,9 +23,10 @@ namespace muZilla.Controllers
         }
 
         /// <summary>
-        /// A regular user requests a support chat by sending the first message.
-        /// This creates a "support request" which can be claimed by a supporter.
+        /// Requests a new support chat session with a prompt.
         /// </summary>
+        /// <param name="prompt">The initial message or question for the support chat.</param>
+        /// <returns>A 200 OK response if the request is successful, or appropriate error responses.</returns>
         [HttpPost("request")]
         public async Task<IActionResult> RequestSupportChat(string prompt)
         {
@@ -41,10 +42,13 @@ namespace muZilla.Controllers
         }
 
         /// <summary>
-        /// A supporter sends a message to a user or continues the conversation.
+        /// Sends a support message from the requester to the assigned supporter.
         /// </summary>
+        /// <param name="supporterId">The ID of the assigned supporter.</param>
+        /// <param name="content">The content of the message.</param>
+        /// <returns>A 200 OK response if the message is sent successfully, or appropriate error responses.</returns>
         [HttpPost("sendreq")]
-        [Authorize] // Assuming only supporters can send this
+        [Authorize]
         public async Task<IActionResult> SendSupportMessageFromRequester(int supporterId, string content)
         {
             if (!ModelState.IsValid)
@@ -61,16 +65,21 @@ namespace muZilla.Controllers
                 return BadRequest("User not found or you are the supporter. Try to use sendsup.");
             }
 
-            // messageDTO.Content is the message content
             await _techSupportService.SendMessageFromRequesterAsync(writerLogin, supporterId, content);
             return Ok("Message sent.");
         }
 
         /// <summary>
-        /// A supporter sends a message to a user or continues the conversation.
+        /// Sends a support message from a supporter to a requester.
         /// </summary>
+        /// <param name="recieverLogin">The login of the requester receiving the message.</param>
+        /// <param name="supporterId">The ID of the supporter sending the message.</param>
+        /// <param name="content">The content of the message.</param>
+        /// <returns>
+        /// A 200 OK response if the message is sent successfully, or appropriate error responses.
+        /// </returns>
         [HttpPost("sendsup")]
-        [Authorize] // Assuming only supporters can send this
+        [Authorize]
         public async Task<IActionResult> SendSupportMessageFromSupporterAsync(string recieverLogin, int supporterId, string content)
         {
             if (!ModelState.IsValid)
@@ -87,7 +96,6 @@ namespace muZilla.Controllers
                 return BadRequest("User not found or is not supporter.");
             }
 
-            // messageDTO.Content is the message content
             if (await _techSupportService.SendMessageFromSupporterAsync(recieverLogin, supporterId, content))
                 return Ok("Message sent.");
             else
@@ -95,8 +103,10 @@ namespace muZilla.Controllers
         }
 
         /// <summary>
-        /// Get all messages between the current user (could be a supporter or a user) and another user.
+        /// Retrieves all messages exchanged between the logged-in user and another user in a support chat.
         /// </summary>
+        /// <param name="otherUserLogin">The login of the other user in the chat.</param>
+        /// <returns>A list of messages if found, or appropriate error responses.</returns>
         [HttpGet("messages/{otherUserLogin}")]
         public async Task<ActionResult<List<SupportMessage>>> GetMessages(string otherUserLogin)
         {
@@ -115,8 +125,11 @@ namespace muZilla.Controllers
         }
 
         /// <summary>
-        /// For a supporter: Retrieve the oldest free request and claim it.
+        /// Retrieves the oldest unanswered support request.
         /// </summary>
+        /// <returns>
+        /// The oldest free support message or a 404 response if no free requests are found.
+        /// </returns>
         [HttpGet("oldest-free-request")]
         [Authorize]
         public async Task<ActionResult<SupportMessage>> GetOldestFreeRequest()
@@ -137,15 +150,16 @@ namespace muZilla.Controllers
                 return NotFound("No free requests found.");
             }
 
-            // Save the changes made to claim the request
             await HttpContext.RequestServices.GetRequiredService<MuzillaDbContext>().SaveChangesAsync();
 
             return Ok(message);
         }
 
         /// <summary>
-        /// For a supporter: Get a list of recent conversations they have.
+        /// Retrieves the latest chat sessions involving the supporter.
         /// </summary>
+        /// <param name="count">The maximum number of chat sessions to retrieve (default is 10).</param>
+        /// <returns>A list of the latest chats.</returns>
         [HttpGet("chats")]
         [Authorize]
         public async Task<ActionResult<List<LastMessageDTO>>> GetChats([FromQuery] int count = 10)

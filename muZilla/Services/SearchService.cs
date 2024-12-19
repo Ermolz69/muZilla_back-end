@@ -15,8 +15,11 @@ namespace muZilla.Services
         }
 
         /// <summary>
-        /// Searches for users by Username and Email only (Login removed from search).
+        /// Searches for users based on their username and/or email address.
         /// </summary>
+        /// <param name="username">The username to search for (optional).</param>
+        /// <param name="email">The email address to search for (optional).</param>
+        /// <returns>A list of users that match the search criteria.</returns>
         public async Task<List<User>> SearchUsersAsync(string? username, string? email)
         {
             var query = _context.Users.AsQueryable();
@@ -31,8 +34,14 @@ namespace muZilla.Services
         }
 
         /// <summary>
-        /// Searches for songs by Title, Genres, HasExplicitLyrics, and PublishDate range.
+        /// Searches for songs based on title, genres, explicit content, and date range.
         /// </summary>
+        /// <param name="title">The title to search for (optional).</param>
+        /// <param name="genres">A comma-separated list of genres to search for (optional).</param>
+        /// <param name="hasExplicit">A flag indicating whether to filter by explicit content (optional).</param>
+        /// <param name="fromDate">The earliest publish date to include (optional).</param>
+        /// <param name="toDate">The latest publish date to include (optional).</param>
+        /// <returns>A list of songs that match the search criteria.</returns>
         public async Task<List<Song>> SearchSongsAsync(
             string? title,
             string? genres,
@@ -78,14 +87,17 @@ namespace muZilla.Services
         }
 
         /// <summary>
-        /// Searches for collections by Title and AuthorId, excluding favorite collections.
+        /// Searches for collections based on their title and/or author ID.
         /// </summary>
+        /// <param name="title">The title to search for (optional).</param>
+        /// <param name="authorId">The unique identifier of the author to filter by (optional).</param>
+        /// <returns>A list of collections that match the search criteria.</returns>
         public async Task<List<Collection>> SearchCollectionsAsync(string? title, int? authorId)
         {
             var query = _context.Collections
                 .Include(c => c.Author)
                 .Include(c => c.Songs)
-                .Where(c => c.IsFavorite == false)  // Favorite collections
+                .Where(c => c.IsFavorite == false)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(title))
@@ -96,6 +108,5 @@ namespace muZilla.Services
 
             return await query.ToListAsync();
         }
-
     }
 }

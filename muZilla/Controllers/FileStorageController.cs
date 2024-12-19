@@ -18,7 +18,14 @@ namespace muZilla.Controllers
             _userService = userService;
         }
 
+        /// <summary>
+        /// Creates a user-specific directory if it does not already exist.
+        /// </summary>
+        /// <param name="login">The login of the user.</param>
+        /// <returns>A response indicating the success or failure of the operation.</returns>
         [HttpPost("createdirectory")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateUserDirectory(string login)
         {
             try
@@ -32,7 +39,16 @@ namespace muZilla.Controllers
             }
         }
 
+        /// <summary>
+        /// Uploads a file to a user's directory.
+        /// </summary>
+        /// <param name="login">The login of the user.</param>
+        /// <param name="file">The file to be uploaded.</param>
+        /// <returns>A response indicating the success or failure of the upload.</returns>
         [HttpPost("upload")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UploadFile(string login, IFormFile file)
         {
             try
@@ -60,7 +76,15 @@ namespace muZilla.Controllers
             }
         }
 
+        /// <summary>
+        /// Creates a directory for a specific song in a user's directory.
+        /// </summary>
+        /// <param name="login">The login of the user.</param>
+        /// <param name="songId">The ID of the song.</param>
+        /// <returns>A response indicating the success or failure of the operation.</returns>
         [HttpPost("createsongdirectory")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateSongDirectory(string login, int songId)
         {
             try
@@ -74,7 +98,17 @@ namespace muZilla.Controllers
             }
         }
 
+        /// <summary>
+        /// Uploads a file to a song-specific directory.
+        /// </summary>
+        /// <param name="login">The login of the user.</param>
+        /// <param name="songId">The ID of the song.</param>
+        /// <param name="file">The file to be uploaded.</param>
+        /// <returns>A response indicating the success or failure of the upload.</returns>
         [HttpPost("uploadforsong")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UploadToSongFile(string login, int songId, IFormFile file)
         {
             try
@@ -102,7 +136,15 @@ namespace muZilla.Controllers
             }
         }
 
+        /// <summary>
+        /// Downloads a file from a user's directory.
+        /// </summary>
+        /// <param name="login">The login of the user.</param>
+        /// <param name="filename">The name of the file to download.</param>
+        /// <returns>The file as a downloadable stream.</returns>
         [HttpGet("download")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DownloadFile(string login, string filename)
         {
             try
@@ -117,7 +159,16 @@ namespace muZilla.Controllers
             }
         }
 
+        /// <summary>
+        /// Downloads a file from a song-specific directory.
+        /// </summary>
+        /// <param name="login">The login of the user.</param>
+        /// <param name="songId">The ID of the song.</param>
+        /// <param name="filename">The name of the file to download.</param>
+        /// <returns>The file as a downloadable stream.</returns>
         [HttpGet("downloadfromsong")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DownloadFileFromSong(string login, int songId, string filename)
         {
             try
@@ -137,7 +188,16 @@ namespace muZilla.Controllers
             }
         }
 
+        /// <summary>
+        /// Streams music from a song-specific directory with optional range processing.
+        /// </summary>
+        /// <param name="login">The login of the user.</param>
+        /// <param name="songId">The ID of the song.</param>
+        /// <param name="filename">The name of the file to stream.</param>
+        /// <returns>A streamed file with appropriate headers for range processing.</returns>
         [HttpGet("stream")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult StreamMusic(string login, int songId, string filename)
         {
             var rangeHeader = Request.Headers.Range.FirstOrDefault();
@@ -157,7 +217,15 @@ namespace muZilla.Controllers
             return File(stream, contentType, enableRangeProcessing: enableRangeProcessing);
         }
 
+        /// <summary>
+        /// Calculates the dominant color of an uploaded image file.
+        /// </summary>
+        /// <param name="file">The image file to process.</param>
+        /// <returns>The dominant color as an RGB string.</returns>
         [HttpPost("dominantcolor")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetDominantColorFromImage(IFormFile file)
         {
             try
