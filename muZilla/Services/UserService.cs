@@ -12,12 +12,14 @@ namespace muZilla.Services
     {
         private readonly MuzillaDbContext _context;
         private readonly AccessLevelService _accessLevelService;
+        private readonly CollectionService _collectionService;
         private readonly IConfiguration _config;
 
-        public UserService(MuzillaDbContext context, IConfiguration config)
+        public UserService(MuzillaDbContext context, IConfiguration config, CollectionService collectionService)
         {
             _context = context;
             _config = config;
+            _collectionService = collectionService;
         }
 
         /// <summary>
@@ -72,22 +74,20 @@ namespace muZilla.Services
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                var favoritesCollection = new Collection
+                int collectionId = await _collectionService.CreateCollectionAsync(new CollectionDTO()
                 {
-                    Title = "Favorites",
-                    Description = "Your favorite songs",
+                    Title = "Favourite Collection",
+                    Description = "Favourite",
                     ViewingAccess = 0,
-                    IsFavorite = false,
                     IsBanned = false,
-                    Author = user,
-                    Songs = new List<Song>()
-                };
+                    IsFavorite = true,
+                    AuthorId = GetIdByLogin(user.Login),
+                    CoverId = null,
+                    SongIds = new List<int>()
+                });
 
-                _context.Collections.Add(favoritesCollection);
-                await _context.SaveChangesAsync();
-
-                user.FavoritesCollectionId = favoritesCollection.Id;
-                user.FavoritesCollection = favoritesCollection;
+                user.FavoritesCollectionId = collectionId;
+                user.FavoritesCollection = await _collectionService.GetCollectionByIdAsync(collectionId);
                 await _context.SaveChangesAsync();
             }
         }
