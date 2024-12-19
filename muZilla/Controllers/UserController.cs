@@ -81,7 +81,7 @@ namespace muZilla.Controllers
             if (profile == null)
             {
                 var rootPath = Directory.GetCurrentDirectory();
-                var filePath = Path.Combine(rootPath, "DefaultPictures", "default.png");
+                var filePath = Path.Combine(rootPath, "DefaultPictures", "default.jpg");
 
                 if (!System.IO.File.Exists(filePath))
                 {
@@ -97,8 +97,8 @@ namespace muZilla.Controllers
                 fileBytes = memoryStream.ToArray();
             }
 
-            await _fileStorageService.CreateFileInDirectoryAsync(userDTO.Login, "pic.png", fileBytes);
-            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = userDTO.Login + "/pic.png", DomainColor = "69,139,69" });
+            await _fileStorageService.CreateFileInDirectoryAsync(userDTO.Login, "pic.jpg", fileBytes);
+            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = userDTO.Login + "/pic.jpg", DomainColor = "69,139,69" });
 
             userDTO.AccessLevelId = access_id;
             userDTO.ProfilePictureId = _imageService.GetNewestAsync();

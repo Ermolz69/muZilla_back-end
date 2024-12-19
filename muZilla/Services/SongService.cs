@@ -177,7 +177,7 @@ namespace muZilla.Services
                     Songs = new List<Song>(),
                     Cover = new Image()
                     {
-                        ImageFilePath = "DEFAULT/default.png",
+                        ImageFilePath = "DEFAULT/default.jpg",
                         DomainColor = "125,125,125"
                     }
                 };

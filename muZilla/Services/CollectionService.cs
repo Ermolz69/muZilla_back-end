@@ -29,14 +29,14 @@ namespace muZilla.Services
             // Если CoverId не указан, подставляем дефолтную картинку
             if (collectionDTO.CoverId == null)
             {
-                // Ищем в БД дефолтную картинку по пути DEFAULT/default.png
-                var defaultImage = await _context.Images.FirstOrDefaultAsync(i => i.ImageFilePath == "DEFAULT/default.png");
+
+                var defaultImage = await _context.Images.FirstOrDefaultAsync(i => i.ImageFilePath == "DEFAULT/default.jpg");
                 if (defaultImage == null)
                 {
                     // Если дефолтной картинки нет в БД, создадим её
                     defaultImage = new Image
                     {
-                        ImageFilePath = "DEFAULT/default.png",
+                        ImageFilePath = "DEFAULT/default.jpg",
                         DomainColor = "125,125,125"
                     };
                     _context.Images.Add(defaultImage);

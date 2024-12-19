@@ -141,7 +141,7 @@ namespace muZilla.Controllers
             {
                 // Use Default Image
                 var rootPath = Directory.GetCurrentDirectory();
-                var filePath = Path.Combine(rootPath, "DefaultPictures", "default.png");
+                var filePath = Path.Combine(rootPath, "DefaultPictures", "default.jpg");
 
                 if (!System.IO.File.Exists(filePath))
                 {
