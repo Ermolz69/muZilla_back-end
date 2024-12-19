@@ -26,31 +26,46 @@ namespace muZilla.Services
         /// <exception cref="InvalidOperationException">Thrown if the image file cannot be read.</exception>
         public async Task CreateImageAsync(ImageDTO imageDTO)
         {
-            string[] st = imageDTO.ImageFilePath.Split('/');
-            var imageBytes = await _fileStorageService.ReadFileFromSongAsync(st[0], int.Parse(st[1]), st[2], null);
-            var pixels = new List<Color>();
-
-            using var memoryStream = new MemoryStream(imageBytes);
-
-            using var image = new Bitmap(memoryStream);
-
-            for (int y = 0; y < image.Height; y++)
+            if (imageDTO.DomainColor == null)
             {
-                for (int x = 0; x < image.Width; x++)
+                string[] st = imageDTO.ImageFilePath.Split('/');
+                var imageBytes = await _fileStorageService.ReadFileFromSongAsync(st[0], int.Parse(st[1]), st[2], null);
+                var pixels = new List<Color>();
+
+                using var memoryStream = new MemoryStream(imageBytes);
+
+                using var image = new Bitmap(memoryStream);
+
+                for (int y = 0; y < image.Height; y++)
                 {
-                    pixels.Add(image.GetPixel(x, y));
+                    for (int x = 0; x < image.Width; x++)
+                    {
+                        pixels.Add(image.GetPixel(x, y));
+                    }
                 }
+
+                Color color = _fileStorageService.GetDominantColor(pixels);
+
+                var _image = new Models.Image()
+                {
+                    ImageFilePath = imageDTO.ImageFilePath,
+                    DomainColor = imageDTO.DomainColor != null ? imageDTO.DomainColor : $"{color.R},{color.G},{color.B}"
+                };
+
+                _context.Images.Add(_image);
+                await _context.SaveChangesAsync();
             }
-
-            Color color = _fileStorageService.GetDominantColor(pixels);
-
-            var _image = new Models.Image()
+            else
             {
-                ImageFilePath = imageDTO.ImageFilePath,
-                DomainColor = imageDTO.DomainColor != null ? imageDTO.DomainColor : $"{color.R},{color.G},{color.B}"};
+                var _image = new Models.Image()
+                {
+                    ImageFilePath = imageDTO.ImageFilePath,
+                    DomainColor = imageDTO.DomainColor
+                };
 
-            _context.Images.Add(_image);
-            await _context.SaveChangesAsync();
+                _context.Images.Add(_image);
+                await _context.SaveChangesAsync();
+            }
         }
 
         /// <summary>
