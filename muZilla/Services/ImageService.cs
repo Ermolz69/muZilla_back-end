@@ -68,6 +68,7 @@ namespace muZilla.Services
             }
         }
 
+
         /// <summary>
         /// Retrieves an image by its unique identifier.
         /// </summary>

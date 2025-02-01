@@ -5,6 +5,7 @@ using muZilla.Models;
 using muZilla.DTOs;
 using System.Net.Mail;
 using System.Net;
+using muZilla.Utils.User;
 
 namespace muZilla.Services
 {
@@ -194,25 +195,26 @@ namespace muZilla.Services
         /// <returns>
         /// An integer value indicating the result:
         /// <list type="bullet">
-        /// <item><description><c>0</c> - User not found.</description></item>
-        /// <item><description><c>-1</c> - Incorrect password.</description></item>
-        /// <item><description><c>-2</c> - User is banned.</description></item>
-        /// <item><description><c>1</c> - Login successful.</description></item>
+        /// <item><description><c>LoginResultType.NotFound</c> - User not found.</description></item>
+        /// <item><description><c>LoginResultType.IncorrectData</c> - Incorrect password.</description></item>
+        /// <item><description><c>LoginResultType.Banned</c> - User is banned.</description></item>
+        /// <item><description><c>LoginResultType.Success</c> - Login successful.</description></item>
         /// </list>
         /// </returns>
         /// <remarks>
         /// This method retrieves the user by login, checks the password, and verifies if the user is not banned.
         /// </remarks>
-        public int CanLogin(string login, string password)
+        public LoginResultType CanLogin(string login, string password)
         {
-            User? user = _context.Users.Select(a => a).Where(a => a.Login == login).FirstOrDefault();
+            User? user = _context.Users.Select(a => a).Where(a => a.Login == login || a.Email == login).FirstOrDefault();
 
-            if (user == null) return 0;
-            if (user.Password != password) return -1;
-            if (user.IsBanned) return -2;
+            if (user == null) return LoginResultType.NotFound;
+            if (user.Password != password) return LoginResultType.IncorrectData;
+            if (user.IsBanned) return LoginResultType.Banned;
 
-            return 1;
-        }    
+            return LoginResultType.Success;
+        } 
+        
 
         /// <summary>
         /// Retrieves the ID of a user based on their login.

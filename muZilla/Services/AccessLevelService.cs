@@ -22,7 +22,7 @@ namespace muZilla.Services
         /// </summary>
         /// <param name="accessLevelDTO">The data transfer object containing the access level details.</param>
         /// <returns>An asynchronous task representing the operation.</returns>
-        public async Task CreateAccessLevelAsync(AccessLevelDTO accessLevelDTO)
+        public async Task<int> CreateAccessLevelAsync(AccessLevelDTO accessLevelDTO)
         {
             var accessLevel = new AccessLevel()
             {
@@ -38,6 +38,8 @@ namespace muZilla.Services
 
             _context.AccessLevels.Add(accessLevel);
             await _context.SaveChangesAsync();
+
+            return accessLevel.Id;
         }
 
         /// <summary>
@@ -102,7 +104,7 @@ namespace muZilla.Services
         /// </returns>
         public async Task<int> CreateDefaultAccessLevelAsync()
         {
-            await CreateAccessLevelAsync(new AccessLevelDTO
+            int id = await CreateAccessLevelAsync(new AccessLevelDTO
             {
                 CanBanUser = false,
                 CanBanSong = false,
@@ -114,8 +116,7 @@ namespace muZilla.Services
                 CanManageAL = false
             });
 
-            return _context.AccessLevels.OrderByDescending(i => i.Id)
-                .FirstOrDefault().Id;
+            return id;
         }
 
         /// <summary>

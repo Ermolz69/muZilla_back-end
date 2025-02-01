@@ -1,9 +1,11 @@
 ﻿using Microsoft.Identity.Client;
+using System.ComponentModel.DataAnnotations;
 
 namespace muZilla.Models
 {
     public class AccessLevel
     {
+        [Key]
         public int Id { get; set; }
         public bool CanBanUser { get; set; }
         public bool CanBanSong { get; set; }

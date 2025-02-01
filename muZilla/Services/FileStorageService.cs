@@ -1,6 +1,7 @@
 ﻿using Azure;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
+using Microsoft.AspNetCore.Mvc;
 using muZilla.Models;
 using System.Drawing;
 
@@ -247,6 +248,7 @@ namespace muZilla.Services
             return new MusicStreamResult(finalStream, "audio/mpeg", true);
         }
 
+        
         #region color
 
         /// <summary>

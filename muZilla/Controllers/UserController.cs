@@ -11,6 +11,7 @@ using muZilla.Models;
 using muZilla.DTOs;
 using System.Net.Mail;
 using System.Net;
+using muZilla.Utils.User;
 
 namespace muZilla.Controllers
 {
@@ -92,15 +93,23 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="id">The unique identifier of the user to delete.</param>
         /// <returns>A 200 OK response upon successful deletion.</returns>
-        [HttpDelete("delete/{id}")]
+        [HttpDelete("delete")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> DeleteUserByIdAsync(int id)
+        public async Task<IActionResult> DeleteUserByIdAsync()
         {
+            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrEmpty(userLogin))
+            {
+                return Unauthorized("Invalid or missing token.");
+            }
+
+            int id = _userService.GetIdByLogin(userLogin);
             await _userService.DeleteUserByIdAsync(id);
             return Ok();
         }
+
 
         /// <summary>
         /// Registers a new user along with their profile picture.
@@ -151,7 +160,7 @@ namespace muZilla.Controllers
         /// <summary>
         /// Logs in a user and generates a JWT token.
         /// </summary>
-        /// <param name="login">The user's login.</param>
+        /// <param name="login">The user's login OR email.</param>
         /// <param name="password">The user's password.</param>
         /// <returns>
         /// A 200 OK response with the generated token, or a 400 Bad Request if the login credentials are invalid.
@@ -161,9 +170,9 @@ namespace muZilla.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult Login(string login, string password)
         {
-            int res = _userService.CanLogin(login, password);
-            if (res == -2) return BadRequest("User is banned. You acted like a dog shit. Go cry.");
-            if (res != 1) return BadRequest("Incorrect login or incorrect password. Access denied.");
+            LoginResultType res = _userService.CanLogin(login, password);
+            if (res == LoginResultType.Banned) return BadRequest("Something went wrong.");
+            if (res == LoginResultType.NotFound || res == LoginResultType.IncorrectData) return BadRequest("Incorrect login or incorrect password. Access denied.");
             var token = GenerateJwtToken(login);
             return Ok(new { token });
         }

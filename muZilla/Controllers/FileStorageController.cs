@@ -19,27 +19,6 @@ namespace muZilla.Controllers
         }
 
         /// <summary>
-        /// Creates a user-specific directory if it does not already exist.
-        /// </summary>
-        /// <param name="login">The login of the user.</param>
-        /// <returns>A response indicating the success or failure of the operation.</returns>
-        [HttpPost("createdirectory")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateUserDirectory(string login)
-        {
-            try
-            {
-                await _fileStorageService.CreateUserDirectoryIfNotExistsAsync(login);
-                return Ok("Directory created successfully.");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error occurred while creating directory: {ex.Message}");
-            }
-        }
-
-        /// <summary>
         /// Uploads a file to a user's directory.
         /// </summary>
         /// <param name="login">The login of the user.</param>
@@ -73,28 +52,6 @@ namespace muZilla.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Creates a directory for a specific song in a user's directory.
-        /// </summary>
-        /// <param name="login">The login of the user.</param>
-        /// <param name="songId">The ID of the song.</param>
-        /// <returns>A response indicating the success or failure of the operation.</returns>
-        [HttpPost("createsongdirectory")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateSongDirectory(string login, int songId)
-        {
-            try
-            {
-                await _fileStorageService.CreateSongDirectoryInDirectoryAsync(login, songId);
-                return Ok("Directory of song created successfully.");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error occurred while creating directory: {ex.Message}");
             }
         }
 
