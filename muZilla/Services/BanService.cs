@@ -2,6 +2,7 @@
 using muZilla.Data;
 using muZilla.DTOs.Ban;
 using muZilla.Models;
+using muZilla.Utils.User;
 
 
 namespace muZilla.Services
@@ -46,15 +47,8 @@ namespace muZilla.Services
                 .Include(u => u.AccessLevel)
                 .FirstOrDefaultAsync(u => u.Id == idOfAdmin);
 
-            try
-            {
-                _accessLevelService.EnsureThisUserCanBanThatUser(admin, userToBan);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return false;
-            }
+            BanResultType? error = _accessLevelService.EnsureThisUserCanBanThatUser(admin, userToBan);
+            if (error != null) return false;
 
             var ban = new Ban
             {
@@ -90,15 +84,8 @@ namespace muZilla.Services
                 .Include(u => u.AccessLevel)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
-            try
-            {
-                _accessLevelService.EnsureThisUserCanUnBanThatUser(admin, userToUnban);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return false;
-            }
+            BanResultType? error = _accessLevelService.EnsureThisUserCanUnBanThatUser(admin, userToUnban);
+            if (error != null) return false;
 
             var bansToRemove = await _context.Bans
                 .Where(b => b.BannedUserId == userId && b.BanUntilUtc > DateTime.UtcNow)
@@ -137,15 +124,8 @@ namespace muZilla.Services
             if (songToBan == null)
                 return false;
 
-            try
-            {
-                _accessLevelService.EnsureThisUserCanBanSong(admin, songToBan);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return false;
-            }
+            BanResultType? error = _accessLevelService.EnsureThisUserCanBanSong(admin, songToBan);
+            if (error != null) return false;
 
             var ban = new Ban
             {
@@ -181,15 +161,8 @@ namespace muZilla.Services
             if (songToUnban == null)
                 return false;
 
-            try
-            {
-                _accessLevelService.EnsureThisUserCanUnBanSong(admin, songToUnban);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return false;
-            }
+            BanResultType? error = _accessLevelService.EnsureThisUserCanUnBanSong(admin, songToUnban);
+            if (error != null) return false;
 
             var bansToRemove = await _context.Bans
                 .Where(b => b.BannedSongId == songId && b.BanUntilUtc > DateTime.UtcNow)
@@ -228,15 +201,8 @@ namespace muZilla.Services
             if (collectionToBan == null)
                 return false;
 
-            try
-            {
-                _accessLevelService.EnsureThisUserCanBanCollection(admin, collectionToBan);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return false;
-            }
+            BanResultType? error = _accessLevelService.EnsureThisUserCanBanCollection(admin, collectionToBan);
+            if (error != null) return false;
 
             var ban = new Ban
             {
@@ -272,15 +238,8 @@ namespace muZilla.Services
             if (collectionToUnban == null)
                 return false;
 
-            try
-            {
-                _accessLevelService.EnsureThisUserCanUnBanCollection(admin, collectionToUnban);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return false;
-            }
+            BanResultType? error = _accessLevelService.EnsureThisUserCanUnBanCollection(admin, collectionToUnban);
+            if (error != null) return false;
 
             var bansToRemove = await _context.Bans
                 .Where(b => b.BannedCollectionId == collectionId && b.BanUntilUtc > DateTime.UtcNow)

@@ -4,6 +4,7 @@ using muZilla.Services;
 using muZilla.DTOs.Ban;
 using System;
 using System.Threading.Tasks;
+using muZilla.Utils.User;
 
 namespace muZilla.Controllers
 {
@@ -51,19 +52,19 @@ namespace muZilla.Controllers
                 return BadRequest("Invalid ban request data.");
             }
 
-            bool success = await _banService.BanUserAsync(
+            bool result = await _banService.BanUserAsync(
                 banRequest.IdToBan,
                 banRequest.AdminId,
                 banRequest.Reason,
                 banRequest.BanUntilUtc
             );
 
-            if (success)
+            if (result)
             {
                 return Ok("User has been successfully banned.");
             }
 
-            return BadRequest("Failed to ban the user. Ensure you have the necessary permissions and the user isn't already banned.");
+            return BadRequest("Failed tonban the user. Ensure you have the necessary permissions and the user is currently unbanned.");
         }
 
         /// <summary>

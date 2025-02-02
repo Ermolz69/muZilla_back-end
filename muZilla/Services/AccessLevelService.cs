@@ -1,6 +1,7 @@
 ﻿using muZilla.Data;
 using muZilla.Models;
 using muZilla.DTOs;
+using muZilla.Utils.User;
 
 
 namespace muZilla.Services
@@ -119,192 +120,144 @@ namespace muZilla.Services
             return id;
         }
 
-        /// <summary>
-        /// Validates that the provided user object is not null.
-        /// </summary>
-        /// <param name="user">The user to validate.</param>
-        /// <exception cref="Exception">Thrown if the user is null.</exception>
-        public void EnsureThisUserIsNotNull(User? user)
+        public BanResultType? EnsureThisUserIsNotNull(User? user)
         {
-            if (user == null) throw new Exception($"User is null.");
+            return user == null ? BanResultType.UserIsNull : null;
         }
 
-        /// <summary>
-        /// Validates that the provided user has a valid access level.
-        /// </summary>
-        /// <param name="user">The user to validate.</param>
-        /// <exception cref="Exception">Thrown if the user's access level is null.</exception>
-        public void EnsureThisUsersAccessLevelIsNotNull(User? user)
+        public BanResultType? EnsureThisUsersAccessLevelIsNotNull(User? user)
         {
-            if (user.AccessLevel == null) throw new Exception($"{user.Login}'s access level is null.");
+            return user.AccessLevel == null ? BanResultType.AccessLevelIsNull : null;
         }
 
-        /// <summary>
-        /// Ensures the user is active, has a valid access level, and is not banned.
-        /// </summary>
-        /// <param name="user">The user to validate.</param>
-        /// <exception cref="Exception">Thrown if the user is banned, null, or lacks a valid access level.</exception>
-        public void EnsureThisUserCanDoAnything(User? user)
+        public BanResultType? EnsureThisUserCanDoAnything(User? user)
         {
-            EnsureThisUserIsNotNull(user);
-            EnsureThisUsersAccessLevelIsNotNull(user);
+            BanResultType? brt = EnsureThisUserIsNotNull(user);
+            if (brt != null) return brt;
+            brt = EnsureThisUsersAccessLevelIsNotNull(user);
+            if (brt != null) return brt;
 
-            if (user.IsBanned) throw new Exception($"{user.Login} is banned and cannot do anything.");
+            return user.IsBanned ? BanResultType.ExecutorIsBanned : null;
         }
 
-        /// <summary>
-        /// Ensures the user does not have permissions to ban other users.
-        /// </summary>
-        /// <param name="user">The user to validate.</param>
-        /// <exception cref="Exception">Thrown if the user has ban permissions.</exception>
-        public void EnsureThisUserCannotBanUser(User? user)
+        public BanResultType? EnsureThisUserCannotBanUser(User? user)
         {
-            EnsureThisUserCanDoAnything(user);
+            BanResultType? brt = EnsureThisUserCanDoAnything(user);
+            if (brt != null) return brt;
 
-            if (user.AccessLevel.CanManageAL) throw new Exception($"{user.Login} can ban users.");
-            if (user.AccessLevel.CanBanUser) throw new Exception($"{user.Login} can ban users.");
+            if (user.AccessLevel.CanManageAL) return BanResultType.UserHasBanAccess;
+            return user.AccessLevel.CanBanUser ? BanResultType.UserHasBanAccess : null;
         }
 
-        /// <summary>
-        /// Ensures the user has permissions to ban another user and the target user is valid to ban.
-        /// </summary>
-        /// <param name="user">The user attempting to perform the ban.</param>
-        /// <param name="userToBan">The target user to be banned.</param>
-        /// <exception cref="Exception">Thrown if the conditions to ban are not met.</exception>
-        public void EnsureThisUserCanBanThatUser(User? user, User userToBan)
+        public BanResultType? EnsureThisUserCanBanThatUser(User? user, User userToBan)
         {
-            EnsureThisUserCanDoAnything(user);
-            if (!user.AccessLevel.CanManageAL) return;
-            EnsureThisUserCannotBanUser(userToBan);
+            BanResultType? brt = EnsureThisUserCanDoAnything(user);
+            if (brt != null) return brt;
 
-            if (userToBan.IsBanned) throw new Exception($"{userToBan.Login} is already banned.");
-            if (user == userToBan) throw new Exception("User and user to ban are the same. Weirdo.");
-            if (!user.AccessLevel.CanBanUser) throw new Exception($"{user.Login} cannot ban users.");
+            if (!user.AccessLevel.CanManageAL) return null;
+            brt = EnsureThisUserCannotBanUser(userToBan);
+            if (brt != null) return brt;
+
+            if (userToBan.IsBanned) return BanResultType.UserIsAlreadyBanned;
+            if (user == userToBan) return BanResultType.UsersAreSame;
+            if (!user.AccessLevel.CanBanUser) return BanResultType.CannotBanUsers;
+
+            return null;
         }
 
-        /// <summary>
-        /// Ensures the user has permissions to unban another user and the target user is valid to unban.
-        /// </summary>
-        /// <param name="user">The user attempting to perform the unban.</param>
-        /// <param name="userToBan">The target user to be unbanned.</param>
-        /// <exception cref="Exception">Thrown if the conditions to unban are not met.</exception>
-        public void EnsureThisUserCanUnBanThatUser(User? user, User userToBan)
+        public BanResultType? EnsureThisUserCanUnBanThatUser(User? user, User userToBan)
         {
-            EnsureThisUserCanDoAnything(user);
-            if (!user.AccessLevel.CanManageAL) return;
+            BanResultType? brt = EnsureThisUserCanDoAnything(user);
+            if (brt != null) return brt;
 
-            if (!userToBan.IsBanned) throw new Exception($"{userToBan.Login} is not banned.");
-            if (user == userToBan) throw new Exception("User and user to ban are the same. Weirdo.");
-            if (!user.AccessLevel.CanBanUser) throw new Exception($"{user.Login} cannot unban users.");
+            if (!user.AccessLevel.CanManageAL) return null;
+
+            if (!userToBan.IsBanned) return BanResultType.UserIsAlreadyBanned;
+            if (user == userToBan) return BanResultType.UsersAreSame;
+            if (!user.AccessLevel.CanBanUser) return BanResultType.CannotBanUsers;
+
+            return null;
         }
 
-        /// <summary>
-        /// Ensures the user has permissions to ban a song and the song is valid to ban.
-        /// </summary>
-        /// <param name="user">The user attempting to perform the ban.</param>
-        /// <param name="song">The song to be banned.</param>
-        /// <exception cref="Exception">Thrown if the conditions to ban the song are not met.</exception>
-        public void EnsureThisUserCanBanSong(User? user, Song song)
+        public BanResultType? EnsureThisUserCanBanSong(User? user, Song song)
         {
-            EnsureThisUserCanDoAnything(user);
-            if (!user.AccessLevel.CanManageAL) return;
+            BanResultType? brt = EnsureThisUserCanDoAnything(user);
+            if (brt != null) return brt;
 
-            if (!song.IsBanned) throw new Exception($"{song.Title} is banned.");
-            if (!user.AccessLevel.CanBanSong) throw new Exception($"{user.Login} cannot ban songs.");
+            if (!user.AccessLevel.CanManageAL) return null;
+            if (song.IsBanned) return BanResultType.SongIsAlreadyBanned;
+            if (!user.AccessLevel.CanBanSong) return BanResultType.CannotBanSongs;
+
+            return null;
         }
 
-        /// <summary>
-        /// Ensures the user has permissions to unban a song and the song is valid to unban.
-        /// </summary>
-        /// <param name="user">The user attempting to perform the unban.</param>
-        /// <param name="song">The song to be unbanned.</param>
-        /// <exception cref="Exception">Thrown if the conditions to unban the song are not met.</exception>
-        public void EnsureThisUserCanUnBanSong(User? user, Song song)
+        public BanResultType? EnsureThisUserCanUnBanSong(User? user, Song song)
         {
-            EnsureThisUserCanDoAnything(user);
-            if (!user.AccessLevel.CanManageAL) return;
+            BanResultType? brt = EnsureThisUserCanDoAnything(user);
+            if (brt != null) return brt;
 
-            if (!song.IsBanned) throw new Exception($"{song.Title} is not banned.");
-            if (!user.AccessLevel.CanBanSong) throw new Exception($"{user.Login} cannot unban songs.");
+            if (!user.AccessLevel.CanManageAL) return null;
+            if (!song.IsBanned) return BanResultType.SongIsAlreadyBanned;
+            if (!user.AccessLevel.CanBanSong) return BanResultType.CannotBanSongs;
+
+            return null;
         }
 
-        /// <summary>
-        /// Ensures that the user has permission to ban a collection.
-        /// </summary>
-        /// <param name="user">The user attempting to ban the collection.</param>
-        /// <param name="collection">The collection to be banned.</param>
-        /// <exception cref="Exception">
-        /// Thrown if the user is invalid, lacks sufficient permissions, or the collection is not valid for banning.
-        /// </exception>
-        public void EnsureThisUserCanBanCollection(User? user, Collection collection)
+        public BanResultType? EnsureThisUserCanBanCollection(User? user, Collection collection)
         {
-            EnsureThisUserCanDoAnything(user);
-            if (!user.AccessLevel.CanManageAL) return;
+            BanResultType? brt = EnsureThisUserCanDoAnything(user);
+            if (brt != null) return brt;
 
-            if (!collection.IsBanned) throw new Exception($"{collection.Title} is banned.");
-            if (!user.AccessLevel.CanBanSong) throw new Exception($"{user.Login} cannot ban collections.");
+            if (!user.AccessLevel.CanManageAL) return null;
+            if (collection.IsBanned) return BanResultType.CollectionIsAlreadyBanned;
+            if (!user.AccessLevel.CanBanSong) return BanResultType.CannotBanCollections;
+
+            return null;
         }
 
-        /// <summary>
-        /// Ensures that the user has permission to unban a collection.
-        /// </summary>
-        /// <param name="user">The user attempting to unban the collection.</param>
-        /// <param name="collection">The collection to be unbanned.</param>
-        /// <exception cref="Exception">
-        /// Thrown if the user is invalid, lacks sufficient permissions, or the collection is not valid for unbanning.
-        /// </exception>
-        public void EnsureThisUserCanUnBanCollection(User? user, Collection collection)
+        public BanResultType? EnsureThisUserCanUnBanCollection(User? user, Collection collection)
         {
-            EnsureThisUserCanDoAnything(user);
-            if (!user.AccessLevel.CanManageAL) return;
+            BanResultType? brt = EnsureThisUserCanDoAnything(user);
+            if (brt != null) return brt;
 
-            if (!collection.IsBanned) throw new Exception($"{collection.Title} is not banned.");
-            if (!user.AccessLevel.CanBanSong) throw new Exception($"{user.Login} cannot unban collections.");
+            if (!user.AccessLevel.CanManageAL) return null;
+            if (!collection.IsBanned) return BanResultType.CollectionIsAlreadyBanned;
+            if (!user.AccessLevel.CanBanSong) return BanResultType.CannotBanCollections;
+
+            return null;
         }
 
-        /// <summary>
-        /// Ensures that the user has permission to manage reports.
-        /// </summary>
-        /// <param name="user">The user attempting to manage reports.</param>
-        /// <exception cref="Exception">
-        /// Thrown if the user is invalid, lacks sufficient permissions, or does not have the `CanManageReports` capability.
-        /// </exception>
-        public void EnsureThisUserCanManageReports(User? user)
+        public BanResultType? EnsureThisUserCanManageReports(User? user)
         {
-            EnsureThisUserCanDoAnything(user);
-            if (!user.AccessLevel.CanManageAL) return;
+            BanResultType? brt = EnsureThisUserCanDoAnything(user);
+            if (brt != null) return brt;
 
-            if (!user.AccessLevel.CanManageReports) throw new Exception($"{user.Login} cannot manage reports.");
+            if (!user.AccessLevel.CanManageAL) return null;
+            if (!user.AccessLevel.CanManageReports) return BanResultType.CannotManageSupports;
+
+            return null;
         }
 
-        /// <summary>
-        /// Ensures that the user has permission to download songs.
-        /// </summary>
-        /// <param name="user">The user attempting to download songs.</param>
-        /// <exception cref="Exception">
-        /// Thrown if the user is invalid, lacks sufficient permissions, or does not have the `CanDownload` capability.
-        /// </exception>
-        public void EnsureThisUserCanDownloadSongs(User? user)
+        public BanResultType? EnsureThisUserCanDownloadSongs(User? user)
         {
-            EnsureThisUserCanDoAnything(user);
-            if (!user.AccessLevel.CanManageAL) return;
+            BanResultType? brt = EnsureThisUserCanDoAnything(user);
+            if (brt != null) return brt;
 
-            if (!user.AccessLevel.CanDownload) throw new Exception($"{user.Login} cannot download songs.");
+            if (!user.AccessLevel.CanManageAL) return null;
+            if (!user.AccessLevel.CanDownload) return BanResultType.CannotDownloadSongs;
+
+            return null;
         }
 
-        /// <summary>
-        /// Ensures that the user has permission to manage support tickets or related functions.
-        /// </summary>
-        /// <param name="user">The user attempting to manage supports.</param>
-        /// <exception cref="Exception">
-        /// Thrown if the user is invalid, lacks sufficient permissions, or does not have the `CanManageSupports` capability.
-        /// </exception>
-        public void EnsureThisUserCanManageSupports(User? user)
+        public BanResultType? EnsureThisUserCanManageSupports(User? user)
         {
-            EnsureThisUserCanDoAnything(user);
-            if (!user.AccessLevel.CanManageAL) return;
+            BanResultType? brt = EnsureThisUserCanDoAnything(user);
+            if (brt != null) return brt;
 
-            if (!user.AccessLevel.CanManageSupports) throw new Exception($"{user.Login} cannot manage supports!");
+            if (!user.AccessLevel.CanManageAL) return null;
+            if (!user.AccessLevel.CanManageSupports) return BanResultType.CannotManageSupports;
+
+            return null;
         }
     }
 }
