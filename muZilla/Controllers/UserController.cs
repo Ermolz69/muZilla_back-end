@@ -12,6 +12,7 @@ using muZilla.DTOs;
 using System.Net.Mail;
 using System.Net;
 using muZilla.Utils.User;
+using muZilla.DTOs.User;
 
 namespace muZilla.Controllers
 {
@@ -43,14 +44,14 @@ namespace muZilla.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateUser(UserDTO userDTO)
+        public async Task<IActionResult> CreateUser(RegisterDTO registerDTO)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            await _userService.CreateUserAsync(userDTO);
+            await _userService.CreateUserAsync(registerDTO);
             return Ok();
         }
 
@@ -77,14 +78,14 @@ namespace muZilla.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdateUserByIdAsync(int id, UserDTO userDTO)
+        public async Task<IActionResult> UpdateUserByIdAsync(int id, RegisterDTO registerDTO)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            await _userService.UpdateUserByIdAsync(id, userDTO);
+            await _userService.UpdateUserByIdAsync(id, registerDTO);
             return Ok();
         }
 
@@ -120,7 +121,7 @@ namespace muZilla.Controllers
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> RegisterUserFullyAsync([FromForm] UserDTO userDTO, [FromForm] IFormFile? profile)
+        public async Task<IActionResult> RegisterUserFullyAsync([FromForm] RegisterDTO registerDTO, [FromForm] IFormFile? profile)
         {
             int access_id = await _accessLevelService.CreateDefaultAccessLevelAsync();
 
@@ -145,14 +146,14 @@ namespace muZilla.Controllers
                 fileBytes = memoryStream.ToArray();
             }
 
-            await _fileStorageService.CreateFileInDirectoryAsync(userDTO.Login, "pic.jpg", fileBytes);
-            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = userDTO.Login + "/pic.jpg", DomainColor = "69,139,69" });
+            await _fileStorageService.CreateFileInDirectoryAsync(registerDTO.loginDTO.Login, "pic.jpg", fileBytes);
+            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = registerDTO.loginDTO.Login + "/pic.jpg", DomainColor = "69,139,69" });
 
-            userDTO.AccessLevelId = access_id;
-            userDTO.ProfilePictureId = _imageService.GetNewestAsync();
+            registerDTO.userDTO.userPublicDataDTO.AccessLevelId = access_id;
+            registerDTO.userDTO.userPublicDataDTO.ProfilePictureId = _imageService.GetNewestAsync();
 
-            await _userService.CreateUserAsync(userDTO);
-            await _userService.SendEmail(userDTO.Login, userDTO.Email);
+            await _userService.CreateUserAsync(registerDTO);
+            await _userService.SendEmail(registerDTO.loginDTO.Login, registerDTO.userDTO.Email);
 
             return Ok();
         }
@@ -168,12 +169,12 @@ namespace muZilla.Controllers
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult Login(string login, string password)
+        public IActionResult Login(LoginDTO loginDTO)
         {
-            LoginResultType res = _userService.CanLogin(login, password);
+            LoginResultType res = _userService.CanLogin(loginDTO);
             if (res == LoginResultType.Banned) return BadRequest("Something went wrong.");
             if (res == LoginResultType.NotFound || res == LoginResultType.IncorrectData) return BadRequest("Incorrect login or incorrect password. Access denied.");
-            var token = GenerateJwtToken(login);
+            var token = GenerateJwtToken(loginDTO.Login);
             return Ok(new { token });
         }
 

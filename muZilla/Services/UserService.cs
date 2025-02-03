@@ -6,6 +6,7 @@ using muZilla.DTOs;
 using System.Net.Mail;
 using System.Net;
 using muZilla.Utils.User;
+using muZilla.DTOs.User;
 
 namespace muZilla.Services
 {
@@ -33,9 +34,9 @@ namespace muZilla.Services
         /// <remarks>
         /// This method verifies if the user's login is unique by checking the database.
         /// </remarks>
-        public bool IsUserValid(UserDTO userDTO)
+        public bool IsUserValid(LoginDTO loginDTO)
         {
-            if (_context.Users.Select(u => u).Where(u => u.Login == userDTO.Login).Any())
+            if (_context.Users.Select(u => u).Where(u => u.Login == loginDTO.Login).Any())
                 return false;
 
             return true;
@@ -52,24 +53,24 @@ namespace muZilla.Services
         /// 3. Automatically creates a "Favorites" collection for the new user.
         /// 4. Links the created collection to the user.
         /// </remarks>
-        public async Task CreateUserAsync(UserDTO userDTO)
+        public async Task CreateUserAsync(RegisterDTO registerDTO)
         {
-            if (IsUserValid(userDTO))
+            if (IsUserValid(registerDTO.loginDTO))
             {
                 User user = new User()
                 {
-                    Username = userDTO.Username,
-                    Email = userDTO.Email,
-                    Login = userDTO.Login,
-                    PhoneNumber = userDTO.PhoneNumber,
-                    Password = userDTO.Password,
-                    DateOfBirth = userDTO.DateOfBirth,
-                    ReceiveNotifications = userDTO.ReceiveNotifications,
+                    Username = registerDTO.userDTO.userPublicDataDTO.Username,
+                    Email = registerDTO.userDTO.Email,
+                    Login = registerDTO.loginDTO.Login,
+                    PhoneNumber = registerDTO.userDTO.PhoneNumber,
+                    Password = registerDTO.loginDTO.Password,
+                    DateOfBirth = registerDTO.userDTO.DateOfBirth,
+                    ReceiveNotifications = registerDTO.userDTO.ReceiveNotifications,
                     IsBanned = false,
                     PublicId = GetPublicIdUnique(),
                     TwoFactoredAuthentification = false,
-                    AccessLevel = await _context.AccessLevels.FindAsync(userDTO.AccessLevelId),
-                    ProfilePicture = await _context.Images.FindAsync(userDTO.ProfilePictureId)
+                    AccessLevel = await _context.AccessLevels.FindAsync(registerDTO.userDTO.userPublicDataDTO.AccessLevelId),
+                    ProfilePicture = await _context.Images.FindAsync(registerDTO.userDTO.userPublicDataDTO.ProfilePictureId)
                 };
 
                 _context.Users.Add(user);
@@ -141,20 +142,20 @@ namespace muZilla.Services
         /// 3. Updates the user's details, including their username, email, login, phone number, password, date of birth, notification preferences, access level, and profile picture.
         /// 4. Saves the changes to the database.
         /// </remarks>
-        public async Task UpdateUserByIdAsync(int id, UserDTO userDTO)
+        public async Task UpdateUserByIdAsync(int id, RegisterDTO registerDTO)
         {
-            if (IsUserValid(userDTO))
+            if (IsUserValid(registerDTO.loginDTO))
             {
                 User user = await _context.Users.FindAsync(id);
-                user.Username = userDTO.Username;
-                user.Email = userDTO.Email;
-                user.Login = userDTO.Login;
-                user.PhoneNumber = userDTO.PhoneNumber;
-                user.Password = userDTO.Password;
-                user.DateOfBirth = userDTO.DateOfBirth;
-                user.ReceiveNotifications = userDTO.ReceiveNotifications;
-                user.AccessLevel = await _context.AccessLevels.FindAsync(userDTO.AccessLevelId);
-                user.ProfilePicture = await _context.Images.FindAsync(userDTO.ProfilePictureId);
+                user.Username = registerDTO.userDTO.userPublicDataDTO.Username;
+                user.Email = registerDTO.userDTO.Email;
+                user.Login = registerDTO.loginDTO.Login;
+                user.PhoneNumber = registerDTO.userDTO.PhoneNumber;
+                user.Password = registerDTO.loginDTO.Password;
+                user.DateOfBirth = registerDTO.userDTO.DateOfBirth;
+                user.ReceiveNotifications = registerDTO.userDTO.ReceiveNotifications;
+                user.AccessLevel = await _context.AccessLevels.FindAsync(registerDTO.userDTO.userPublicDataDTO.AccessLevelId);
+                user.ProfilePicture = await _context.Images.FindAsync(registerDTO.userDTO.userPublicDataDTO.ProfilePictureId);
 
                 await _context.SaveChangesAsync();
             }
@@ -204,12 +205,12 @@ namespace muZilla.Services
         /// <remarks>
         /// This method retrieves the user by login, checks the password, and verifies if the user is not banned.
         /// </remarks>
-        public LoginResultType CanLogin(string login, string password)
+        public LoginResultType CanLogin(LoginDTO loginDTO)
         {
-            User? user = _context.Users.Select(a => a).Where(a => a.Login == login || a.Email == login).FirstOrDefault();
+            User? user = _context.Users.Select(a => a).Where(a => a.Login == loginDTO.Login || a.Email == loginDTO.Login).FirstOrDefault();
 
             if (user == null) return LoginResultType.NotFound;
-            if (user.Password != password) return LoginResultType.IncorrectData;
+            if (user.Password != loginDTO.Password) return LoginResultType.IncorrectData;
             if (user.IsBanned) return LoginResultType.Banned;
 
             return LoginResultType.Success;
