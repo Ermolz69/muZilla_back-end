@@ -140,7 +140,7 @@ namespace muZilla.Services
             else if (user.AccessLevel == null)
                 result = BanResultType.AccessLevelIsNull;
             else if (user.IsBanned)
-                result = BanResultType.UserIsBanned;
+                result = BanResultType.ItBanned;
 
             return result;
         }
@@ -205,10 +205,10 @@ namespace muZilla.Services
                 return BanResultType.UsersAreSame;
             else if (resultAdmin != BanResultType.Success)
                 return resultAdmin;
-            else if (resultUserToBan == BanResultType.UserIsBanned)
+            else if (resultUserToBan == BanResultType.ItBanned)
                 return BanResultType.Success;
 
-            return resultUserToBan;
+            return BanResultType.ItNotBanned;
         }
 
         public BanResultType EnsureThisUserCanBanSong(User? user, Song song)
@@ -217,12 +217,12 @@ namespace muZilla.Services
             if (result != BanResultType.Success) 
                 return result;
             else if (song.IsBanned) 
-                return BanResultType.SongIsAlreadyBanned;
+                return BanResultType.ItBanned;
 
             return BanResultType.Success;
         }
 
-        public BanResultType EnsureThisUserCanUnBanSong(User? user, Song song)
+        public BanResultType EnsureUserCanUnBanSong(User? user, Song song)
         {
             BanResultType result = EnsureUserCanDoActions(user);
             if (result != BanResultType.Success)
@@ -232,7 +232,7 @@ namespace muZilla.Services
             else if (song.IsBanned)
                 result = BanResultType.Success;
 
-            return result;
+            return BanResultType.ItNotBanned;
         }
 
         public BanResultType EnsureUserCanBanCollection(User? user, Collection collection)
@@ -241,7 +241,7 @@ namespace muZilla.Services
             if (result != BanResultType.Success)
                 return result;
             else if (collection.IsBanned) 
-                return BanResultType.CollectionIsAlreadyBanned;
+                return BanResultType.ItBanned;
             else if (!user.AccessLevel.CanBanSong) 
                 return BanResultType.CannotBanCollections;
 
@@ -256,7 +256,7 @@ namespace muZilla.Services
             else if (collection.IsBanned)
                 result = BanResultType.Success;
 
-            return result;
+            return BanResultType.ItNotBanned;
         }
 
         public BanResultType EnsureThisUserCanManageReports(User? user)

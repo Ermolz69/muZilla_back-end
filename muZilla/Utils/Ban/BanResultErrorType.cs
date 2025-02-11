@@ -1,15 +1,24 @@
-﻿namespace muZilla.Utils.Ban
+﻿using System;
+using System.ComponentModel;
+using System.Reflection;
+
+namespace muZilla.Utils.Ban
 {
     public enum BanResultType
     {
         #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        [Description("Пользователь не найден")]
         UserIsNull,
+        SongIsNull,
+        CollectionIsNull,
         AccessLevelIsNull,
-        UserIsBanned,
+
+        ItBanned,
+        ItNotBanned,
+        
         UserHasBanAccess,
         UsersAreSame,
-        SongIsAlreadyBanned,
-        CollectionIsAlreadyBanned,
+
         CannotBanAdmins,
         CannotBanUsers,
         CannotBanSongs,
