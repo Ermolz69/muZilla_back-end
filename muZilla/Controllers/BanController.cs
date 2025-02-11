@@ -2,9 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using muZilla.Services;
 using muZilla.DTOs.Ban;
-using System;
-using System.Threading.Tasks;
-using muZilla.Utils.User;
+using muZilla.Utils.Ban;
 
 namespace muZilla.Controllers
 {

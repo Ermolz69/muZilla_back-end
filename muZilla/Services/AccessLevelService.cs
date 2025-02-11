@@ -1,7 +1,7 @@
 ﻿using muZilla.Data;
 using muZilla.Models;
 using muZilla.DTOs;
-using muZilla.Utils.User;
+using muZilla.Utils.Ban;
 
 
 namespace muZilla.Services
@@ -120,144 +120,179 @@ namespace muZilla.Services
             return id;
         }
 
-        public BanResultType? EnsureThisUserIsNotNull(User? user)
+        // TODO: Delete?
+        //public bool EnsureThisUserIsNotNull(User? user)
+        //{
+        //    return user == null ? false : true;
+        //}
+
+        //public bool EnsureThisUsersAccessLevelIsNotNull(User? user)
+        //{
+        //    return user.AccessLevel == null ? false : true;
+        //}
+
+        public BanResultType EnsureUserCanDoActions(User? user)
         {
-            return user == null ? BanResultType.UserIsNull : null;
+            BanResultType result = BanResultType.Success;
+
+            if (user == null)
+                result = BanResultType.UserIsNull;
+            else if (user.AccessLevel == null)
+                result = BanResultType.AccessLevelIsNull;
+            else if (user.IsBanned)
+                result = BanResultType.UserIsBanned;
+
+            return result;
         }
 
-        public BanResultType? EnsureThisUsersAccessLevelIsNotNull(User? user)
+        public BanResultType EnsureUserCanBanUser(User? user)
         {
-            return user.AccessLevel == null ? BanResultType.AccessLevelIsNull : null;
+            BanResultType result = EnsureUserCanDoActions(user);
+            if (result != BanResultType.Success)
+                return result;
+            else if (user!.AccessLevel!.CanBanUser != true)
+                result = BanResultType.CannotBanUsers;
+
+            return BanResultType.Success;
+        }
+        public BanResultType EnsureUserCanBanSong(User? user)
+        {
+            BanResultType result = EnsureUserCanDoActions(user);
+            if (result != BanResultType.Success)
+                return result;
+            else if (user!.AccessLevel!.CanBanUser != true)
+                result = BanResultType.CannotBanUsers;
+
+            return BanResultType.Success;
         }
 
-        public BanResultType? EnsureThisUserCanDoAnything(User? user)
+        // TODO: Add in model AsscesLevel -> CanBanCollection
+        public BanResultType EnsureUserCanBanCollection(User? user)
         {
-            BanResultType? brt = EnsureThisUserIsNotNull(user);
-            if (brt != null) return brt;
-            brt = EnsureThisUsersAccessLevelIsNotNull(user);
-            if (brt != null) return brt;
+            BanResultType result = EnsureUserCanDoActions(user);
+            if (result != BanResultType.Success)
+                return result;
+            else if (user!.AccessLevel!.CanBanUser != true)
+                result = BanResultType.CannotBanUsers;
 
-            return user.IsBanned ? BanResultType.ExecutorIsBanned : null;
+            return BanResultType.Success;
         }
 
-        public BanResultType? EnsureThisUserCannotBanUser(User? user)
-        {
-            BanResultType? brt = EnsureThisUserCanDoAnything(user);
-            if (brt != null) return brt;
 
-            if (user.AccessLevel.CanManageAL) return BanResultType.UserHasBanAccess;
-            return user.AccessLevel.CanBanUser ? BanResultType.UserHasBanAccess : null;
+        public BanResultType EnsureUserCanBanUser(User? user, User userToBan)
+        {
+            BanResultType resultAdmin = EnsureUserCanBanUser(user);
+            BanResultType resultUserToBan = EnsureUserCanDoActions(user);
+
+            if (user.Id == userToBan.Id) 
+                return BanResultType.UsersAreSame;
+            else if (resultAdmin != BanResultType.Success)
+                return resultAdmin; 
+            else if (resultUserToBan != BanResultType.Success)
+                return resultUserToBan;
+            else if (resultAdmin == BanResultType.Success && user!.AccessLevel!.CanBanUser == true)
+                return BanResultType.CannotBanAdmins;
+
+            return BanResultType.Success;
         }
 
-        public BanResultType? EnsureThisUserCanBanThatUser(User? user, User userToBan)
+        public BanResultType EnsureUserCanUnBanUser(User? user, User userToBan)
         {
-            BanResultType? brt = EnsureThisUserCanDoAnything(user);
-            if (brt != null) return brt;
+            BanResultType resultAdmin = EnsureUserCanBanUser(user);
+            BanResultType resultUserToBan = EnsureUserCanDoActions(user);
 
-            if (!user.AccessLevel.CanManageAL) return null;
-            brt = EnsureThisUserCannotBanUser(userToBan);
-            if (brt != null) return brt;
+            if (user.Id == userToBan.Id)
+                return BanResultType.UsersAreSame;
+            else if (resultAdmin != BanResultType.Success)
+                return resultAdmin;
+            else if (resultUserToBan == BanResultType.UserIsBanned)
+                return BanResultType.Success;
 
-            if (userToBan.IsBanned) return BanResultType.UserIsAlreadyBanned;
-            if (user == userToBan) return BanResultType.UsersAreSame;
-            if (!user.AccessLevel.CanBanUser) return BanResultType.CannotBanUsers;
-
-            return null;
+            return resultUserToBan;
         }
 
-        public BanResultType? EnsureThisUserCanUnBanThatUser(User? user, User userToBan)
+        public BanResultType EnsureThisUserCanBanSong(User? user, Song song)
         {
-            BanResultType? brt = EnsureThisUserCanDoAnything(user);
-            if (brt != null) return brt;
+            BanResultType result = EnsureUserCanBanSong(user);
+            if (result != BanResultType.Success) 
+                return result;
+            else if (song.IsBanned) 
+                return BanResultType.SongIsAlreadyBanned;
 
-            if (!user.AccessLevel.CanManageAL) return null;
-
-            if (!userToBan.IsBanned) return BanResultType.UserIsAlreadyBanned;
-            if (user == userToBan) return BanResultType.UsersAreSame;
-            if (!user.AccessLevel.CanBanUser) return BanResultType.CannotBanUsers;
-
-            return null;
+            return BanResultType.Success;
         }
 
-        public BanResultType? EnsureThisUserCanBanSong(User? user, Song song)
+        public BanResultType EnsureThisUserCanUnBanSong(User? user, Song song)
         {
-            BanResultType? brt = EnsureThisUserCanDoAnything(user);
-            if (brt != null) return brt;
+            BanResultType result = EnsureUserCanDoActions(user);
+            if (result != BanResultType.Success)
+                return result;
+            else if (!user!.AccessLevel.CanBanSong)
+                return BanResultType.CannotBanSongs;
+            else if (song.IsBanned)
+                result = BanResultType.Success;
 
-            if (!user.AccessLevel.CanManageAL) return null;
-            if (song.IsBanned) return BanResultType.SongIsAlreadyBanned;
-            if (!user.AccessLevel.CanBanSong) return BanResultType.CannotBanSongs;
-
-            return null;
+            return result;
         }
 
-        public BanResultType? EnsureThisUserCanUnBanSong(User? user, Song song)
+        public BanResultType EnsureUserCanBanCollection(User? user, Collection collection)
         {
-            BanResultType? brt = EnsureThisUserCanDoAnything(user);
-            if (brt != null) return brt;
+            BanResultType result = EnsureUserCanDoActions(user);
+            if (result != BanResultType.Success)
+                return result;
+            else if (collection.IsBanned) 
+                return BanResultType.CollectionIsAlreadyBanned;
+            else if (!user.AccessLevel.CanBanSong) 
+                return BanResultType.CannotBanCollections;
 
-            if (!user.AccessLevel.CanManageAL) return null;
-            if (!song.IsBanned) return BanResultType.SongIsAlreadyBanned;
-            if (!user.AccessLevel.CanBanSong) return BanResultType.CannotBanSongs;
-
-            return null;
+            return BanResultType.Success;
         }
 
-        public BanResultType? EnsureThisUserCanBanCollection(User? user, Collection collection)
+        public BanResultType EnsureUserCanUnBanCollection(User? user, Collection collection)
         {
-            BanResultType? brt = EnsureThisUserCanDoAnything(user);
-            if (brt != null) return brt;
+            BanResultType result = EnsureUserCanBanCollection(user);
+            if (result != BanResultType.Success)
+                return result;
+            else if (collection.IsBanned)
+                result = BanResultType.Success;
 
-            if (!user.AccessLevel.CanManageAL) return null;
-            if (collection.IsBanned) return BanResultType.CollectionIsAlreadyBanned;
-            if (!user.AccessLevel.CanBanSong) return BanResultType.CannotBanCollections;
-
-            return null;
+            return result;
         }
 
-        public BanResultType? EnsureThisUserCanUnBanCollection(User? user, Collection collection)
+        public BanResultType EnsureThisUserCanManageReports(User? user)
         {
-            BanResultType? brt = EnsureThisUserCanDoAnything(user);
-            if (brt != null) return brt;
+            BanResultType result = EnsureUserCanDoActions(user);
+            if (result != BanResultType.Success)
+                return result;
 
-            if (!user.AccessLevel.CanManageAL) return null;
-            if (!collection.IsBanned) return BanResultType.CollectionIsAlreadyBanned;
-            if (!user.AccessLevel.CanBanSong) return BanResultType.CannotBanCollections;
+            if (!user!.AccessLevel.CanManageReports) 
+                return BanResultType.CannotManageSupports;
 
-            return null;
+            return BanResultType.Success;
         }
 
-        public BanResultType? EnsureThisUserCanManageReports(User? user)
+        public BanResultType EnsureThisUserCanDownloadSongs(User? user)
         {
-            BanResultType? brt = EnsureThisUserCanDoAnything(user);
-            if (brt != null) return brt;
+            BanResultType result = EnsureUserCanDoActions(user);
+            if (result != BanResultType.Success)
+                return result;
 
-            if (!user.AccessLevel.CanManageAL) return null;
-            if (!user.AccessLevel.CanManageReports) return BanResultType.CannotManageSupports;
+            if (!user!.AccessLevel.CanDownload) 
+                return BanResultType.CannotDownloadSongs;
 
-            return null;
+            return BanResultType.Success;
         }
 
-        public BanResultType? EnsureThisUserCanDownloadSongs(User? user)
+        public BanResultType EnsureThisUserCanManageSupports(User? user)
         {
-            BanResultType? brt = EnsureThisUserCanDoAnything(user);
-            if (brt != null) return brt;
+            BanResultType result = EnsureUserCanDoActions(user);
+            if (result != BanResultType.Success)
+                return result;
 
-            if (!user.AccessLevel.CanManageAL) return null;
-            if (!user.AccessLevel.CanDownload) return BanResultType.CannotDownloadSongs;
+            if (!user!.AccessLevel.CanManageSupports) 
+                return BanResultType.CannotManageSupports;
 
-            return null;
-        }
-
-        public BanResultType? EnsureThisUserCanManageSupports(User? user)
-        {
-            BanResultType? brt = EnsureThisUserCanDoAnything(user);
-            if (brt != null) return brt;
-
-            if (!user.AccessLevel.CanManageAL) return null;
-            if (!user.AccessLevel.CanManageSupports) return BanResultType.CannotManageSupports;
-
-            return null;
+            return BanResultType.Success;
         }
     }
 }
