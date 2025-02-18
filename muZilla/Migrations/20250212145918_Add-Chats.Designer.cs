@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using muZilla.Data;
 
@@ -11,9 +12,11 @@ using muZilla.Data;
 namespace muZilla.Migrations
 {
     [DbContext(typeof(MuzillaDbContext))]
-    partial class MuzillaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250212145918_Add-Chats")]
+    partial class AddChats
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -176,19 +179,6 @@ namespace muZilla.Migrations
                     b.ToTable("BlockedUsers");
                 });
 
-            modelBuilder.Entity("muZilla.Models.Chat", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Chats");
-                });
-
             modelBuilder.Entity("muZilla.Models.Collection", b =>
                 {
                     b.Property<int>("Id")
@@ -305,8 +295,6 @@ namespace muZilla.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ChatId");
 
                     b.ToTable("Messages");
                 });
@@ -446,9 +434,6 @@ namespace muZilla.Migrations
                     b.Property<int>("AccessLevelId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ChatId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("datetime2");
 
@@ -493,8 +478,6 @@ namespace muZilla.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AccessLevelId");
-
-                    b.HasIndex("ChatId");
 
                     b.HasIndex("FavoritesCollectionId")
                         .IsUnique()
@@ -645,15 +628,6 @@ namespace muZilla.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("muZilla.Models.Message", b =>
-                {
-                    b.HasOne("muZilla.Models.Chat", null)
-                        .WithMany("Messages")
-                        .HasForeignKey("ChatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("muZilla.Models.Song", b =>
                 {
                     b.HasOne("muZilla.Models.Image", "Cover")
@@ -677,10 +651,6 @@ namespace muZilla.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("muZilla.Models.Chat", null)
-                        .WithMany("Members")
-                        .HasForeignKey("ChatId");
-
                     b.HasOne("muZilla.Models.Collection", "FavoritesCollection")
                         .WithOne()
                         .HasForeignKey("muZilla.Models.User", "FavoritesCollectionId")
@@ -697,13 +667,6 @@ namespace muZilla.Migrations
                     b.Navigation("FavoritesCollection");
 
                     b.Navigation("ProfilePicture");
-                });
-
-            modelBuilder.Entity("muZilla.Models.Chat", b =>
-                {
-                    b.Navigation("Members");
-
-                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("muZilla.Models.Song", b =>

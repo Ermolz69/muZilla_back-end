@@ -173,7 +173,7 @@ namespace muZilla.Controllers
         {
             LoginResultType res = _userService.CanLogin(loginDTO);
             if (res == LoginResultType.Banned) return BadRequest("Something went wrong.");
-            if (res == LoginResultType.NotFound || res == LoginResultType.IncorrectData) return BadRequest("Incorrect login or incorrect password. Access denied.");
+            if (res == LoginResultType.NotFound || res == LoginResultType.IncorrectData) return BadRequest($"Incorrect login or incorrect password. Access denied. Code: {res.ToString()}");
             var token = GenerateJwtToken(loginDTO.Login);
             return Ok(new { token });
         }

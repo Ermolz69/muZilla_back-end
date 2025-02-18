@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Identity.UI.Services;
+using muZilla.Utils.Chat;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace muZilla.Models
@@ -8,14 +10,17 @@ namespace muZilla.Models
         public int Id { get; set; }
 
         [Required]
-        public string SenderLogin { get; set; }
+        public int SenderId { get; set; }
 
         [Required]
-        public string ReceiverLogin { get; set; }
+        public int ChatId { get; set; }
 
-        [Required]
-        public string Content { get; set; }
+        public string? Text { get; set; }
+        public byte[]? FileData { get; set; }
+        public MessageType Type { get; set; }
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public virtual Chat Chat { get; set; }
 
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 }

@@ -1,8 +1,11 @@
-﻿namespace muZilla.DTOs.Message
+﻿using muZilla.Utils.Chat;
+
+namespace muZilla.DTOs.Message
 {
     public class MessageDTO
     {
-        public string ReceiverLogin { get; set; }
+        public int ReceiverId { get; set; }
         public string Content { get; set; }
+        public MessageType Type { get; set; } 
     }
 }

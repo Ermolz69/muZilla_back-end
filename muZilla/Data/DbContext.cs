@@ -22,6 +22,7 @@ namespace muZilla.Data
         public DbSet<SupportMessage> SupportMessages { get; set; }
         public DbSet<Ban> Bans { get; set; }
         public DbSet<Report> Reports { get; set; }
+        public DbSet<Chat> Chats { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -170,6 +171,27 @@ namespace muZilla.Data
                 .WithMany()
                 .HasForeignKey(b => b.BannedCollectionId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Chat>()
+               .HasMany(c => c.Members)
+               .WithMany(u => u.Chats)
+               .UsingEntity<Dictionary<string, object>>(
+                   "ChatUser",
+                   cu => cu.HasOne<User>()
+                           .WithMany()
+                           .HasForeignKey("UserId")
+                           .OnDelete(DeleteBehavior.Restrict),
+                   cu => cu.HasOne<Chat>()
+                           .WithMany()
+                           .HasForeignKey("ChatId")
+                           .OnDelete(DeleteBehavior.Restrict)
+               );
+
+            modelBuilder.Entity<Chat>()
+                .HasMany(c => c.Messages)
+                .WithOne()
+                .HasForeignKey(m => m.ChatId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

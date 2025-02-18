@@ -33,6 +33,7 @@ namespace muZilla.Controllers
         /// or a 401 Unauthorized if the sender is not authenticated.
         /// </returns>
         [HttpPost("send")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -43,23 +44,18 @@ namespace muZilla.Controllers
                 return BadRequest(ModelState);
             }
 
-            var senderLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            int senderId = _userService.GetIdByLogin(User.FindFirst(ClaimTypes.Name)?.Value);
 
-            if (senderLogin == null)
+            if (senderId == null)
             {
                 return Unauthorized();
             }
 
-            var receiverId = _userService.GetIdByLogin(messageDTO.ReceiverLogin);
-            if (receiverId == -1)
-            {
-                return BadRequest("Sender was not found.");
-            }
-
-            await _chatService.SendMessageAsync(senderLogin, messageDTO);
-            return Ok();
+            //await _chatService.SendMessageAsync(senderId, messageDTO);
+            return Ok(senderId);
         }
 
+        /*
         /// <summary>
         /// Retrieves a list of messages exchanged with a specified user.
         /// </summary>
@@ -70,6 +66,7 @@ namespace muZilla.Controllers
         /// or a 401 Unauthorized if the requesting user is not authenticated.
         /// </returns>
         [HttpGet("messages/{otherUserLogin}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -102,6 +99,7 @@ namespace muZilla.Controllers
         /// or a 401 Unauthorized if the requesting user is not authenticated.
         /// </returns>
         [HttpGet("chats/{otherUserLogin}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -123,5 +121,7 @@ namespace muZilla.Controllers
             var messages = await _chatService.GetChats(otherUserLogin, 10);
             return Ok(messages);
         }
+
+        */
     }
 }

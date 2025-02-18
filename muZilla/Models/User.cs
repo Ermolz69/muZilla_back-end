@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using muZilla.Utils.User;
 
 namespace muZilla.Models
 {
@@ -15,9 +12,11 @@ namespace muZilla.Models
         public string Password { get; set; }
         public string PhoneNumber { get; set; }
         public DateTime DateOfBirth { get; set; }
+
         public bool ReceiveNotifications { get; set; }
         public bool IsBanned { get; set; }
         public bool TwoFactoredAuthentification { get; set; }
+        //public ActivityStatus Status {get; set;} = ActivityStatus.Idle;
 
         // Связь с коллекцией "favorites"
         public int? FavoritesCollectionId { get; set; }
@@ -30,5 +29,7 @@ namespace muZilla.Models
         public virtual Image ProfilePicture { get; set; }
         public virtual ICollection<FriendsCouple> Friends { get; set; }
         public virtual ICollection<BlockedUser> Blocked { get; set; }
+        public virtual ICollection<Chat> Chats { get; set; } = new List<Chat>();
+
     }
 }

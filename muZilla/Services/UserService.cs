@@ -41,6 +41,13 @@ namespace muZilla.Services
 
             return true;
         }
+        public bool IsUserValid(uint id)
+        {
+            if (_context.Users.Select(u => u).Where(u => u.Id == id).Any())
+                return false;
+
+            return true;
+        }
 
         /// <summary>
         /// Creates a new user based on the provided data.
