@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using muZilla.Entities.Models;
 
 using muZilla.Application.Interfaces;
+using Microsoft.Extensions.Configuration;
 
 
 namespace muZilla.Application.Services
@@ -15,12 +16,11 @@ namespace muZilla.Application.Services
         private readonly IGenericRepository _repository;
         private readonly TableClient tableClient;
 
-        public FriendsCoupleService(IGenericRepository repository)
+        public FriendsCoupleService(IGenericRepository repository,IConfiguration _config)
         {
             _repository = repository;
-            var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
-            var connectionString = configuration["StorageConnectionString"]!;
-            var tableName = configuration["TableName"]!;
+            var connectionString = _config["StorageConnectionString"]!;
+            var tableName = _config["TableName"]!;
 
             tableClient = new TableClient(connectionString, tableName);
         }

@@ -63,10 +63,10 @@ namespace muZilla.Application.Services
 
             if (songDTO.OriginalId != null)
             {
-                if (GetSongByIdAsync(songDTO.OriginalId.Value).Result.RemixesAllowed == false)
+                if (GetSongByIdAsync(songDTO.OriginalId.Value).Result!.RemixesAllowed == false)
                     return -1;
                 else
-                    GetSongByIdAsync(songDTO.OriginalId.Value).Result.Remixes.Add(song);
+                    GetSongByIdAsync(songDTO.OriginalId.Value).Result!.Remixes.Add(song);
             }
 
             song.Authors = new List<User>();
@@ -93,9 +93,9 @@ namespace muZilla.Application.Services
         /// </summary>
         /// <param name="id">The unique identifier of the song.</param>
         /// <returns>The song object if found, otherwise null.</returns>
-        public async Task<Song> GetSongByIdAsync(int id)
+        public async Task<Song?> GetSongByIdAsync(int id)
         {
-            var song = await _repository.Songs
+            var song = await _repository.GetAllAsync<Song>().Result
                 .Include(s => s.Remixes)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -104,7 +104,7 @@ namespace muZilla.Application.Services
                 return null;
             }
 
-            var remixes = await _repository.Songs
+            var remixes = await _repository.GetAllAsync<Song>().Result
                 .Where(s => s.Original != null && s.Original.Id == id)
                 .ToListAsync();
 
@@ -126,7 +126,7 @@ namespace muZilla.Application.Services
         /// </returns>
         public async Task<int> UpdateSongByIdAsync(int id, SongDTO songDTO)
         {
-            var song = await _repository.Songs
+            var song = await _repository.GetAllAsync<Song>().Result
                 .Include(s => s.Authors)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -141,12 +141,12 @@ namespace muZilla.Application.Services
             song.RemixesAllowed = songDTO.RemixesAllowed;
             song.PublishDate = songDTO.PublishDate;
             song.HasExplicitLyrics = songDTO.HasExplicitLyrics;
-            song.Cover = songDTO.ImageId.HasValue ? await _repository.Images.FindAsync(songDTO.ImageId.Value) : null;
+            song.Cover = songDTO.ImageId.HasValue ? await _repository.GetByIdAsync<Image>(songDTO.ImageId.Value) : null;
 
             song.Authors.Clear();
             foreach (var authorId in songDTO.AuthorIds)
             {
-                var author = await _repository.Users
+                var author = await _repository.GetAllAsync<User>().Result
                     .Include(u => u.AccessLevel)
                     .FirstOrDefaultAsync(u => u.Id == authorId);
 
@@ -156,7 +156,7 @@ namespace muZilla.Application.Services
                 }
             }
 
-            _repository.Songs.Update(song);
+            await _repository.UpdateAsync(song);
             await _repository.SaveChangesAsync();
 
             return 200;
@@ -169,8 +169,8 @@ namespace muZilla.Application.Services
         /// <returns>An asynchronous task representing the deletion operation.</returns>
         public async Task DeleteSongByIdAsync(int id)
         {
-            Song? song = await _repository.Songs.FindAsync(id);
-            if (song != null) _repository.Songs.Remove(song);
+            Song? song = await _repository.GetByIdAsync<Song>(id);
+            if (song != null) await _repository.RemoveAsync(song);
 
             await _repository.SaveChangesAsync();
         }
@@ -185,7 +185,7 @@ namespace muZilla.Application.Services
             Song? song = await GetSongByIdAsync(songId);
             if (song != null) song.Views += 1;
             else return;
-            _repository.Songs.Update(song);
+            await _repository.UpdateAsync(song);
             await _repository.SaveChangesAsync();
         }
 
@@ -197,7 +197,7 @@ namespace muZilla.Application.Services
         /// <returns>An asynchronous task representing the operation.</returns>
         public async Task ToggleLikeSongAsync(int userId, int songId)
         {
-            var user = await _repository.Users
+            var user = await _repository.GetAllAsync<User>().Result
                 .Include(u => u.FavoritesCollection)
                     .ThenInclude(c => c.Songs)
                 .FirstOrDefaultAsync(u => u.Id == userId);
@@ -222,14 +222,14 @@ namespace muZilla.Application.Services
                     }
                 };
 
-                _repository.Collections.Add(favoritesCollection);
+                await _repository.AddAsync(favoritesCollection);
                 await _repository.SaveChangesAsync();
 
                 user.FavoritesCollectionId = favoritesCollection.Id;
                 user.FavoritesCollection = favoritesCollection;
             }
 
-            var song = await _repository.Songs.FindAsync(songId);
+            var song = await _repository.GetByIdAsync<Song>(songId);
 
             if (song == null) return;
 

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace muZilla.Migrations
+namespace muZilla.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class AddReportTable : Migration

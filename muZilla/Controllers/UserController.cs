@@ -6,13 +6,11 @@ using System.Text;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 
-using muZilla.Services;
-using muZilla.Models;
-using muZilla.DTOs;
-using System.Net.Mail;
-using System.Net;
-using muZilla.Utils.User;
-using muZilla.DTOs.User;
+using muZilla.Application.Services;
+using muZilla.Entities.Models;
+using muZilla.Application.DTOs;
+using muZilla.Entities.Enums;
+using muZilla.Application.DTOs.User;
 
 namespace muZilla.Controllers
 {
@@ -106,7 +104,7 @@ namespace muZilla.Controllers
                 return Unauthorized("Invalid or missing token.");
             }
 
-            int id = _userService.GetIdByLogin(userLogin);
+            int id = await _userService.GetIdByLoginAsync(userLogin);
             await _userService.DeleteUserByIdAsync(id);
             return Ok();
         }
@@ -153,7 +151,7 @@ namespace muZilla.Controllers
             registerDTO.userDTO.userPublicDataDTO.ProfilePictureId = _imageService.GetNewestAsync();
 
             await _userService.CreateUserAsync(registerDTO);
-            await _userService.SendEmail(registerDTO.loginDTO.Login, registerDTO.userDTO.Email);
+            _userService.SendEmail(registerDTO.loginDTO.Login, registerDTO.userDTO.Email);
 
             return Ok();
         }
@@ -187,7 +185,7 @@ namespace muZilla.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public int GetIdByLogin(string login)
         {
-            return _userService.GetIdByLogin(login);
+            return _userService.GetIdByLoginAsync(login).Result;
         }
 
         /// <summary>

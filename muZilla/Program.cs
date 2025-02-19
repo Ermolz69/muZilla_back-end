@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using muZilla.Data;
-using muZilla.Services;
 using System.Globalization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using muZilla.Application.Services;
+using muZilla.Infrastructure.Data;
+using muZilla.Application.Interfaces;
+using muZilla.Infrastructure.Repository;
 
 namespace muZilla
 {
@@ -39,6 +41,10 @@ namespace muZilla
             builder.Services.AddScoped<BanService>();
             builder.Services.AddScoped<ReportService>();
             builder.Services.AddScoped<TechSupportService>();
+
+            builder.Services.AddScoped<IGenericRepository, GenericRepository>();
+
+
             builder.Services.AddHostedService<BanCleanupService>();
 
             builder.Services.AddControllers()

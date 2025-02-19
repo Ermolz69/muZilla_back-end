@@ -9,13 +9,11 @@ namespace muZilla.Application.Services
     public class AccessLevelService
     {
         private readonly IGenericRepository _repository;
-        private readonly UserService _userService;
 
-        public AccessLevelService(IGenericRepository repository, UserService userService)
+
+        public AccessLevelService(IGenericRepository repository)
         {
             _repository = repository;
-            _userService = userService;
-            _userService._accessLevelService = this;
         }
 
         /// <summary>

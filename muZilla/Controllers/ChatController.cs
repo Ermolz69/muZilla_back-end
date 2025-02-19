@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 
 using System.Security.Claims;
 
-using muZilla.Models;
-using muZilla.Services;
-using muZilla.DTOs.Message;
+using muZilla.Entities.Models;
+using muZilla.Application.Services;
+using muZilla.Application.DTOs.Message;
 
 namespace muZilla.Controllers
 {
@@ -44,7 +44,7 @@ namespace muZilla.Controllers
                 return BadRequest(ModelState);
             }
 
-            int senderId = _userService.GetIdByLogin(User.FindFirst(ClaimTypes.Name)?.Value);
+            int senderId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
 
             if (senderId == null)
             {
@@ -79,7 +79,7 @@ namespace muZilla.Controllers
                 return Unauthorized();
             }
 
-            var otherUserId = _userService.GetIdByLogin(otherUserLogin);
+            var otherUserId = _userService.GetIdByLoginAsync(otherUserLogin);
             if (otherUserId == -1)
             {
                 return BadRequest("Secondary user was not found.");
@@ -112,7 +112,7 @@ namespace muZilla.Controllers
                 return Unauthorized();
             }
 
-            var otherUserId = _userService.GetIdByLogin(otherUserLogin);
+            var otherUserId = _userService.GetIdByLoginAsync(otherUserLogin);
             if (otherUserId == -1)
             {
                 return BadRequest("Secondary user was not found.");

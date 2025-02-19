@@ -37,7 +37,7 @@ namespace muZilla.Application.Services
                 Timestamp = DateTime.UtcNow
             };
 
-            _repository.SupportMessages.Add(message);
+            await _repository.AddAsync(message);
             await _repository.SaveChangesAsync();
         }
 
@@ -53,13 +53,13 @@ namespace muZilla.Application.Services
             var message = new SupportMessage
             {
                 SenderLogin = senderLogin,
-                ReceiverLogin = (await _userService.GetUserByIdAsync(supporterId)).Login,
+                ReceiverLogin = (await _userService.GetUserByIdAsync(supporterId))!.Login,
                 SupporterId = supporterId,
                 Content = content,
                 Timestamp = DateTime.UtcNow
             };
 
-            _repository.SupportMessages.Add(message);
+            await _repository.AddAsync(message);
             await _repository.SaveChangesAsync();
         }
 
@@ -72,7 +72,7 @@ namespace muZilla.Application.Services
         /// <returns>True if the message is sent successfully, false otherwise.</returns>
         public async Task<bool> SendMessageFromSupporterAsync(string receiverLogin, int supporterId, string content)
         {
-            User supporter = await _userService.GetUserByIdAsync(supporterId);
+            User supporter = (await _userService.GetUserByIdAsync(supporterId))!;
             try { _accessLevelService.EnsureThisUserCanManageSupports(supporter); }
             catch (Exception e) { Console.WriteLine(e); return false; }
 
@@ -85,7 +85,7 @@ namespace muZilla.Application.Services
                 Timestamp = DateTime.UtcNow
             };
 
-            _repository.SupportMessages.Add(message);
+            await _repository.AddAsync(message);
             await _repository.SaveChangesAsync();
 
             return true;
@@ -99,7 +99,7 @@ namespace muZilla.Application.Services
         /// <returns>A list of messages ordered by their timestamp.</returns>
         public async Task<List<SupportMessage>> GetMessagesAsync(string userLogin, string otherUserLogin)
         {
-            return await _repository.SupportMessages
+            return await _repository.GetAllAsync<SupportMessage>().Result
                 .Where(m =>
                     (m.SenderLogin == userLogin && m.ReceiverLogin == otherUserLogin) ||
                     (m.SenderLogin == otherUserLogin && m.ReceiverLogin == userLogin))
@@ -117,11 +117,11 @@ namespace muZilla.Application.Services
         /// </returns>
         public async Task<SupportMessage?> GetOldestFreeRequestAsync(string login, int supporterId)
         {
-            User supporter = await _userService.GetUserByIdAsync(supporterId);
+            User supporter = (await _userService.GetUserByIdAsync(supporterId))!;
             try { _accessLevelService.EnsureThisUserCanManageSupports(supporter); }
             catch (Exception e) { Console.WriteLine(e); return null; }
 
-            SupportMessage? message = await _repository.SupportMessages
+            SupportMessage? message = await _repository.GetAllAsync<SupportMessage>().Result
                 .Where(m => m.SupporterId == 0)
                 .OrderByDescending(m => m.Timestamp)
                 .FirstOrDefaultAsync();
@@ -158,7 +158,7 @@ namespace muZilla.Application.Services
         {
             var chats = new List<LastMessageDTO>();
 
-            var allMessages = await _repository.SupportMessages
+            var allMessages = await _repository.GetAllAsync<SupportMessage>().Result
                 .Where(m => m.SupporterId == supporterId)
                 .OrderByDescending(m => m.Timestamp)
                 .ToListAsync();

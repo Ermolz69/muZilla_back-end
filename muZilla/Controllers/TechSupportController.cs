@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using muZilla.Models;
-using muZilla.Services;
-using muZilla.DTOs.Message;
-using muZilla.Data;
+using muZilla.Entities.Models;
+using muZilla.Application.Services;
+using muZilla.Application.DTOs.Message;
+using muZilla.Infrastructure.Data;
 
 namespace muZilla.Controllers
 {
@@ -114,7 +114,7 @@ namespace muZilla.Controllers
             if (userLogin == null)
                 return Unauthorized();
 
-            var otherUserId = _userService.GetIdByLogin(otherUserLogin);
+            var otherUserId = await _userService.GetIdByLoginAsync(otherUserLogin);
             if (otherUserId == -1)
             {
                 return BadRequest("Другой пользователь не найден.");
@@ -138,7 +138,7 @@ namespace muZilla.Controllers
             if (supporterLogin == null)
                 return Unauthorized();
 
-            var supporterId = _userService.GetIdByLogin(supporterLogin);
+            var supporterId = await _userService.GetIdByLoginAsync(supporterLogin);
             if (supporterId == -1)
             {
                 return BadRequest("Supporter not found.");
@@ -168,7 +168,7 @@ namespace muZilla.Controllers
             if (supporterLogin == null)
                 return Unauthorized();
 
-            var supporterId = _userService.GetIdByLogin(supporterLogin);
+            var supporterId = await _userService.GetIdByLoginAsync(supporterLogin);
             if (supporterId == -1)
             {
                 return BadRequest("Supporter not found.");

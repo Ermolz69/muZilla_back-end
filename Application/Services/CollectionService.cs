@@ -145,10 +145,10 @@ namespace muZilla.Application.Services
         /// <returns>An asynchronous task representing the toggle operation.</returns>
         public async Task ToggleLikeCollectionAsync(int userId, int collectionId)
         {
-            var user = await _repository.Users
+            var user = await _repository.GetAllAsync<User>().Result
                 .Include(u => u.LikedCollections)
                 .FirstOrDefaultAsync(u => u.Id == userId);
-            var collection = await _repository.Collections.FindAsync(collectionId);
+            var collection = await _repository.GetByIdAsync<Collection>(collectionId);
             if (user == null || collection == null) return;
 
             if (!user.LikedCollections.Contains(collection))

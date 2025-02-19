@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using muZilla.Data;
+using muZilla.Infrastructure.Data;
 
 #nullable disable
 
-namespace muZilla.Migrations
+namespace muZilla.Infrastructure.Migrations
 {
     [DbContext(typeof(MuzillaDbContext))]
     [Migration("20241215123605_Report")]

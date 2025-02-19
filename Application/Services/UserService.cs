@@ -9,13 +9,13 @@ using muZilla.Entities.Enums;
 using muZilla.Application.DTOs;
 using muZilla.Application.DTOs.User;
 using muZilla.Application.Interfaces;
+using Microsoft.Extensions.Configuration;
 
 namespace muZilla.Application.Services
 {
     public class UserService
     {
         private readonly IGenericRepository _repository;
-        public AccessLevelService _accessLevelService;
         private readonly CollectionService _collectionService;
         private readonly IConfiguration _config;
 
@@ -38,14 +38,14 @@ namespace muZilla.Application.Services
         /// </remarks>
         public bool IsUserValid(LoginDTO loginDTO)
         {
-            if (_repository.Users.Select(u => u).Where(u => u.Login == loginDTO.Login).Any())
+            if (_repository.GetAllAsync<User>().Result.Select(u => u).Where(u => u.Login == loginDTO.Login).Any())
                 return false;
 
             return true;
         }
         public bool IsUserValid(uint id)
         {
-            if (_repository.Users.Select(u => u).Where(u => u.Id == id).Any())
+            if (_repository.GetAllAsync<User>().Result.Select(u => u).Where(u => u.Id == id).Any())
                 return false;
 
             return true;
@@ -78,11 +78,11 @@ namespace muZilla.Application.Services
                     IsBanned = false,
                     PublicId = GetPublicIdUnique(),
                     TwoFactoredAuthentification = false,
-                    AccessLevel = await _repository.AccessLevels.FindAsync(registerDTO.userDTO.userPublicDataDTO.AccessLevelId),
-                    ProfilePicture = await _repository.Images.FindAsync(registerDTO.userDTO.userPublicDataDTO.ProfilePictureId)
+                    AccessLevel = (await _repository.GetByIdAsync<AccessLevel>(registerDTO.userDTO.userPublicDataDTO.AccessLevelId))!,
+                    ProfilePicture = (await _repository.GetByIdAsync<Image>(registerDTO.userDTO.userPublicDataDTO.ProfilePictureId))!
                 };
 
-                _repository.Users.Add(user);
+                await _repository.AddAsync<User>(user);
                 await _repository.SaveChangesAsync();
 
                 int collectionId = await _collectionService.CreateCollectionAsync(new CollectionDTO()
@@ -92,13 +92,13 @@ namespace muZilla.Application.Services
                     ViewingAccess = 0,
                     IsBanned = false,
                     IsFavorite = true,
-                    AuthorId = GetIdByLogin(user.Login),
+                    AuthorId = await GetIdByLoginAsync(user.Login),
                     CoverId = null,
                     SongIds = new List<int>()
                 });
 
                 user.FavoritesCollectionId = collectionId;
-                user.FavoritesCollection = await _collectionService.GetCollectionByIdAsync(collectionId);
+                user.FavoritesCollection = (await _collectionService.GetCollectionByIdAsync(collectionId))!;
                 await _repository.SaveChangesAsync();
             }
         }
@@ -119,7 +119,7 @@ namespace muZilla.Application.Services
             {
                 id = rand.Next(10000000, 99999999);
                 
-            } while (_repository.Users.Select(u => u.PublicId).Contains(id));
+            } while (_repository.GetAllAsync<User>().Result.Select(u => u.PublicId).Contains(id));
             return id;
         }
 
@@ -133,10 +133,11 @@ namespace muZilla.Application.Services
         /// <remarks>
         /// This method queries the database for a user with the specified ID and includes the related access level data.
         /// </remarks>
-        public async Task<User> GetUserByIdAsync(int id)
+        public async Task<User?> GetUserByIdAsync(int id)
         {
-            return await _repository.Users.Include(u => u.AccessLevel)
-        .FirstOrDefaultAsync(u => u.Id == id);
+            return await _repository.GetAllAsync<User>().Result
+                .Include(u => u.AccessLevel)
+                .FirstOrDefaultAsync(u => u.Id == id);
         }
 
         /// <summary>
@@ -155,7 +156,7 @@ namespace muZilla.Application.Services
         {
             if (IsUserValid(registerDTO.loginDTO))
             {
-                User user = await _repository.Users.FindAsync(id);
+                User user = (await _repository.GetByIdAsync<User>(id))!;
                 user.Username = registerDTO.userDTO.userPublicDataDTO.Username;
                 user.Email = registerDTO.userDTO.Email;
                 user.Login = registerDTO.loginDTO.Login;
@@ -163,8 +164,8 @@ namespace muZilla.Application.Services
                 user.Password = registerDTO.loginDTO.Password;
                 user.DateOfBirth = registerDTO.userDTO.DateOfBirth;
                 user.ReceiveNotifications = registerDTO.userDTO.ReceiveNotifications;
-                user.AccessLevel = await _repository.AccessLevels.FindAsync(registerDTO.userDTO.userPublicDataDTO.AccessLevelId);
-                user.ProfilePicture = await _repository.Images.FindAsync(registerDTO.userDTO.userPublicDataDTO.ProfilePictureId);
+                user.AccessLevel = (await _repository.GetByIdAsync<AccessLevel>(registerDTO.userDTO.userPublicDataDTO.AccessLevelId))!;
+                user.ProfilePicture = (await _repository.GetByIdAsync<Image>(registerDTO.userDTO.userPublicDataDTO.ProfilePictureId))!;
 
                 await _repository.SaveChangesAsync();
             }
@@ -182,7 +183,7 @@ namespace muZilla.Application.Services
         /// </remarks>
         public async Task DeleteUserByIdAsync(int id)
         {
-            User? user = await _repository.Users
+            User? user = await _repository.GetAllAsync<User>().Result
                 .Include(u => u.AccessLevel)
                 .Include(u => u.FavoritesCollection)
                 .FirstOrDefaultAsync(u => u.Id == id);
@@ -190,10 +191,10 @@ namespace muZilla.Application.Services
             if (user == null)
                 return;
 
-            _repository.Collections.Remove(user.FavoritesCollection);
+            await _repository.RemoveAsync<Collection>(user.FavoritesCollection);
             await _repository.SaveChangesAsync();
 
-            _repository.Users.Remove(user);
+            await _repository.RemoveAsync<User>(user);
             await _repository.SaveChangesAsync();
         }
 
@@ -216,7 +217,7 @@ namespace muZilla.Application.Services
         /// </remarks>
         public LoginResultType CanLogin(LoginDTO loginDTO)
         {
-            User? user = _repository.Users.Select(a => a).Where(a => a.Login == loginDTO.Login || a.Email == loginDTO.Login).FirstOrDefault();
+            User? user = _repository.GetAllAsync<User>().Result.Select(a => a).Where(a => a.Login == loginDTO.Login || a.Email == loginDTO.Login).FirstOrDefault();
 
             if (user == null) return LoginResultType.NotFound;
             if (user.Password != loginDTO.Password) return LoginResultType.IncorrectData;
@@ -237,19 +238,10 @@ namespace muZilla.Application.Services
         /// This method attempts to find a user with the specified login and returns their ID. 
         /// If the user is not found or an exception occurs, it returns <c>-1</c>.
         /// </remarks>
-        public int GetIdByLogin(string login)
+        public async Task<int> GetIdByLoginAsync(string login)
         {
-            try
-            {
-                return _repository.Users
-                    .Select(a => a)
-                    .Where(a => a.Login == login)
-                    .FirstOrDefault().Id;
-            }
-            catch
-            {
-                return -1;
-            }
+           var user = await GetUserByLoginAsync(login);
+           return user == null ? -1 : user.Id;
         }
 
         /// <summary>
@@ -261,7 +253,7 @@ namespace muZilla.Application.Services
         /// </returns>
         public async Task<User?> GetUserByLoginAsync(string login)
         {
-            return await _repository.Users
+            return await _repository.GetAllAsync<User>().Result
                 .Include(u => u.AccessLevel)
                 .FirstOrDefaultAsync(u => u.Login == login);
         }
@@ -274,18 +266,18 @@ namespace muZilla.Application.Services
         /// <remarks>
         /// Configures Gmail's SMTP server with SSL enabled for secure email transmission.
         /// </remarks>
-        public async Task SendEmail(string login, string email)
+        public void SendEmail(string login, string email)
         {
             try
             {
                 string smtpServer = "smtp.gmail.com";
                 int smtpPort = 587;
-                string senderEmail = _config["EmailSMTP:Email"];
-                string senderPassword = _config["EmailSMTP:Password"];
+                string senderEmail = _config["EmailSMTP:Email"]!;
+                string senderPassword = _config["EmailSMTP:Password"]!;
 
                 string recipientEmail = email;
-                string subject = "Welcome to MUZILLA!!!";
-                string body = $"Welcome aboard, {login}! You have registered in our website.\n\nLet's work together!";
+                string subject = "Welcome to MUZILLA q(≧▽≦q)";
+                string body = $"Welcome aboard(/≧▽≦)/, {login}! You have registered in our website.\n\nLet's work together!";
 
                 SmtpClient smtpClient = new SmtpClient(smtpServer, smtpPort)
                 {
@@ -304,11 +296,11 @@ namespace muZilla.Application.Services
 
                 smtpClient.Send(mailMessage);
 
-                Console.WriteLine("Письмо успешно отправлено!");
+                Console.WriteLine("post sent success!");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка при отправке письма: {ex.Message}");
+                Console.WriteLine($"error on sending: {ex.Message}");
             }
         }
     }

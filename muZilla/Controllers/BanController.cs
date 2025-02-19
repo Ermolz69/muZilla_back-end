@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using muZilla.Services;
-using muZilla.DTOs.Ban;
-using muZilla.Utils.Ban;
+using muZilla.Application.Services;
+using muZilla.Application.DTOs.Ban;
+using muZilla.Entities.Enums;
 
 namespace muZilla.Controllers
 {

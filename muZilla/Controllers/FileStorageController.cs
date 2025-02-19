@@ -1,7 +1,7 @@
 ﻿using System.Drawing;
 using Microsoft.AspNetCore.Mvc;
-using muZilla.Models;
-using muZilla.Services;
+using muZilla.Entities.Models;
+using muZilla.Application.Services;
 
 namespace muZilla.Controllers
 {
@@ -169,7 +169,7 @@ namespace muZilla.Controllers
             string contentType;
             bool enableRangeProcessing;
 
-            result.SetAll(out stream, out contentType, out enableRangeProcessing);
+            result.GetStreamDetails(out stream, out contentType, out enableRangeProcessing);
 
             return File(stream, contentType, enableRangeProcessing: enableRangeProcessing);
         }
@@ -198,17 +198,7 @@ namespace muZilla.Controllers
 
                 using var image = new Bitmap(memoryStream);
 
-                var pixels = new List<Color>();
-
-                for (int y = 0; y < image.Height; y++)
-                {
-                    for (int x = 0; x < image.Width; x++)
-                    {
-                        pixels.Add(image.GetPixel(x, y));
-                    }
-                }
-
-                Color dominantColor = _fileStorageService.GetDominantColor(pixels);
+                Color dominantColor = _fileStorageService.GetDominantColor(image);
 
                 return Ok($"{dominantColor.R},{dominantColor.G},{dominantColor.B}");
             }

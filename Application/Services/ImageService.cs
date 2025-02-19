@@ -1,10 +1,8 @@
 ﻿using System.Drawing;
-
-
-using muZilla.Entities.Models;
-
 using muZilla.Application.DTOs;
 using muZilla.Application.Interfaces;
+using muZilla.Entities.Models;
+
 
 
 namespace muZilla.Application.Services
@@ -27,46 +25,38 @@ namespace muZilla.Application.Services
         /// <param name="imageDTO">The data transfer object containing image details, including file path and optional domain color.</param>
         /// <returns>An asynchronous task representing the operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the image file cannot be read.</exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
         public async Task CreateImageAsync(ImageDTO imageDTO)
         {
             if (imageDTO.DomainColor == null)
             {
                 string[] st = imageDTO.ImageFilePath.Split('/');
-                var imageBytes = await _fileStorageService.ReadFileFromSongAsync(st[0], int.Parse(st[1]), st[2], null);
-                var pixels = new List<Color>();
+                var imageBytes = (await _fileStorageService.ReadFileFromSongAsync(st[0], int.Parse(st[1]), st[2], null))!;
 
                 using var memoryStream = new MemoryStream(imageBytes);
 
                 using var image = new Bitmap(memoryStream);
 
-                for (int y = 0; y < image.Height; y++)
-                {
-                    for (int x = 0; x < image.Width; x++)
-                    {
-                        pixels.Add(image.GetPixel(x, y));
-                    }
-                }
+                Color color = _fileStorageService.GetDominantColor(image);
 
-                Color color = _fileStorageService.GetDominantColor(pixels);
-
-                var _image = new Models.Image()
+                var _image = new Entities.Models.Image()
                 {
                     ImageFilePath = imageDTO.ImageFilePath,
                     DomainColor = imageDTO.DomainColor != null ? imageDTO.DomainColor : $"{color.R},{color.G},{color.B}"
                 };
 
-                _repository.Images.Add(_image);
+                await _repository.AddAsync<Entities.Models.Image>(_image);
                 await _repository.SaveChangesAsync();
             }
             else
             {
-                var _image = new Models.Image()
+                var _image = new Entities.Models.Image()
                 {
                     ImageFilePath = imageDTO.ImageFilePath,
                     DomainColor = imageDTO.DomainColor
                 };
 
-                _repository.Images.Add(_image);
+                await _repository.AddAsync<Entities.Models.Image>(_image);
                 await _repository.SaveChangesAsync();
             }
         }
@@ -77,9 +67,9 @@ namespace muZilla.Application.Services
         /// </summary>
         /// <param name="id">The unique identifier of the image.</param>
         /// <returns>The image if found, or null if not found.</returns>
-        public async Task<Models.Image?> GetImageById(int id)
+        public async Task<Entities.Models.Image?> GetImageById(int id)
         {
-            var image = await _repository.Images.FindAsync(id);
+            var image = await _repository.GetByIdAsync<Entities.Models.Image>(id);
 
             return image;
         }
@@ -92,13 +82,13 @@ namespace muZilla.Application.Services
         /// <returns>An asynchronous task representing the update operation.</returns>
         public async Task UpdateImageByIdAsync(int id, ImageDTO imageDTO)
         {
-            var image = await _repository.Images.FindAsync(id);
+            var image = await _repository.GetByIdAsync<Entities.Models.Image>(id);
             if (image != null)
             {
                 image.ImageFilePath = imageDTO.ImageFilePath;
                 image.DomainColor = imageDTO.DomainColor;
                     
-                _repository.Images.Update(image);
+                await _repository.UpdateAsync<Entities.Models.Image>(image);
                 await _repository.SaveChangesAsync();
             }
         }
@@ -110,10 +100,10 @@ namespace muZilla.Application.Services
         /// <returns>An asynchronous task representing the deletion operation.</returns>
         public async Task DeleteImageByIdAsync(int id)
         {
-            var image = await _repository.Images.FindAsync(id);
+            var image = await _repository.GetByIdAsync<Entities.Models.Image>(id);
             if (image != null)
             {
-                _repository.Images.Remove(image);
+                await _repository.RemoveAsync<Entities.Models.Image>(image);
                 await _repository.SaveChangesAsync();
             }
         }
@@ -125,7 +115,7 @@ namespace muZilla.Application.Services
         /// <exception cref="InvalidOperationException">Thrown if no images are found.</exception>
         public int GetNewestAsync()
         {
-            var latestImage = _repository.Images
+            var latestImage = _repository.GetAllAsync<Entities.Models.Image>().Result
                 .OrderByDescending(i => i.Id)
                 .FirstOrDefault();
 

@@ -2,7 +2,7 @@
 using Azure;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
-
+using Microsoft.Extensions.Configuration;
 using muZilla.Entities.Models;
 
 namespace muZilla.Application.Services
@@ -35,11 +35,10 @@ namespace muZilla.Application.Services
         static string fileSharesName = string.Empty;
         private const int MB = 1048576;
         static ShareClient shareClient;
-        public FileStorageService()
+        public FileStorageService(IConfiguration _config)
         {
-            var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
-            connectionString = configuration["StorageConnectionString"];
-            fileSharesName = configuration["FileStorageName"];
+            connectionString = _config["StorageConnectionString"]!;
+            fileSharesName = _config["FileStorageName"]!;
 
             shareClient = new ShareClient(connectionString, fileSharesName);
             shareClient.CreateIfNotExistsAsync();
@@ -249,147 +248,72 @@ namespace muZilla.Application.Services
             return new MusicStreamResult(finalStream, "audio/mpeg", true);
         }
 
-        
+
         #region color
 
         /// <summary>
-        /// Finds the dominant color from a list of pixels using the k-means clustering algorithm.
+        /// Analyzes a given bitmap image and determines the dominant color by clustering pixels.
         /// </summary>
-        /// <param name="pixels">A list of colors representing the pixels to analyze.</param>
-        /// <param name="k">The number of clusters to use for k-means. Defaults to 5.</param>
-        /// <param name="maxIterations">The maximum number of iterations for the k-means algorithm. Defaults to 100.</param>
-        /// <returns>The dominant color as a <see cref="Color"/>.</returns>
-        /// <exception cref="ArgumentException">Thrown if k is less than or equal to 0.</exception>
-        public Color GetDominantColor(List<Color> pixels, int k = 5, int maxIterations = 100)
+        /// <param name="image">The input bitmap image.</param>
+        /// <param name="clusterCountX">The number of clusters along the X-axis (default: 48).</param>
+        /// <param name="clusterCountY">The number of clusters along the Y-axis (default: 48).</param>
+        /// <returns>The most frequent (dominant) color in the image.</returns>
+        /// <remarks>
+        /// - The image is resized to a smaller resolution to improve performance.
+        /// - Colors are rounded to the nearest multiple of 5 to reduce noise.
+        /// - If the number of unique colors exceeds 800, an alternative approach is used based on brightness.
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">Thrown if the image is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if cluster count values are non-positive.</exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
+        public static Color GetDominantColor(Bitmap image, int clusterCountX = 48, int clusterCountY = 48)
         {
-            if (pixels == null || pixels.Count == 0)
+            if (image == null)
                 return Color.Black;
 
-            if (k <= 0)
-                throw new ArgumentException("k must be greater than 0");
+            if (clusterCountX <= 0 || clusterCountY <= 0)
+                return Color.Black;
 
-            Random rand = new Random();
-            List<Color> centroids = new List<Color>();
-            for (int i = 0; i < k; i++)
+            image = new Bitmap((Bitmap)image.Clone(), new Size(clusterCountX, clusterCountY));
+
+            int imgWidth = image.Width;
+            int imgHeight = image.Height;
+
+            int clusterWidth = (int)Math.Ceiling((double)imgWidth / clusterCountX);
+            int clusterHeight = (int)Math.Ceiling((double)imgHeight / clusterCountY);
+
+            var colorFrequency = new Dictionary<Color, double>();
+
+            for (int x = 0; x < imgWidth; x++)
             {
-                centroids.Add(pixels[rand.Next(pixels.Count)]);
-            }
-
-            int[] assignments = new int[pixels.Count];
-            bool changed = true;
-            int iteration = 0;
-
-            while (changed && iteration < maxIterations)
-            {
-                changed = false;
-                iteration++;
-
-                for (int i = 0; i < pixels.Count; i++)
+                for (int y = 0; y < imgHeight; y++)
                 {
-                    int nearestCluster = FindNearestCluster(pixels[i], centroids);
-                    if (assignments[i] != nearestCluster)
-                    {
-                        assignments[i] = nearestCluster;
-                        changed = true;
-                    }
-                }
+                    int clusterX = x / clusterWidth;
+                    int clusterY = y / clusterHeight;
+                    var pixelColor = image.GetPixel(x, y);
 
-                if (changed)
-                {
-                    centroids = RecalculateCentroids(pixels, assignments, k);
+                    const int roundFactor = 5;
+                    int r = (pixelColor.R / roundFactor) * roundFactor;
+                    int g = (pixelColor.G / roundFactor) * roundFactor;
+                    int b = (pixelColor.B / roundFactor) * roundFactor;
+
+                    if (colorFrequency.ContainsKey(pixelColor))
+                        colorFrequency[pixelColor] += 1;
+                    else
+                        colorFrequency[pixelColor] = 1;
                 }
             }
 
-            var clusterCounts = new Dictionary<int, int>();
-            for (int i = 0; i < assignments.Length; i++)
-            {
-                int c = assignments[i];
-                if (!clusterCounts.ContainsKey(c))
-                    clusterCounts[c] = 0;
-                clusterCounts[c]++;
-            }
 
-            int dominantCluster = clusterCounts.OrderByDescending(x => x.Value).First().Key;
-            return centroids[dominantCluster];
+            var dominantColor = colorFrequency.OrderByDescending(c => c.Value).ElementAt(0).Key;
+            if (colorFrequency.Count > 800)
+            {
+                dominantColor = colorFrequency.OrderByDescending(c => c.Key.GetBrightness()).ElementAt(colorFrequency.Count / 3).Key;
+                return dominantColor;
+            }
+            return dominantColor;
         }
 
-        /// <summary>
-        /// Finds the nearest cluster for a given pixel by calculating the distance to each centroid.
-        /// </summary>
-        /// <param name="pixel">The pixel whose nearest cluster is being determined.</param>
-        /// <param name="centroids">The list of current centroids.</param>
-        /// <returns>The index of the nearest cluster.</returns>
-        private static int FindNearestCluster(Color pixel, List<Color> centroids)
-        {
-            int nearestCluster = 0;
-            double minDist = double.MaxValue;
-            for (int i = 0; i < centroids.Count; i++)
-            {
-                double dist = ColorDistance(pixel, centroids[i]);
-                if (dist < minDist)
-                {
-                    minDist = dist;
-                    nearestCluster = i;
-                }
-            }
-            return nearestCluster;
-        }
-
-        /// <summary>
-        /// Calculates the Euclidean distance between two colors in RGB space.
-        /// </summary>
-        /// <param name="c1">The first color.</param>
-        /// <param name="c2">The second color.</param>
-        /// <returns>The Euclidean distance between the two colors.</returns>
-        private static double ColorDistance(Color c1, Color c2)
-        {
-            int dr = c1.R - c2.R;
-            int dg = c1.G - c2.G;
-            int db = c1.B - c2.B;
-            return Math.Sqrt(dr * dr + dg * dg + db * db);
-        }
-
-        /// <summary>
-        /// Recalculates the centroids for all clusters based on the assigned pixels.
-        /// </summary>
-        /// <param name="pixels">The list of pixels to analyze.</param>
-        /// <param name="assignments">An array mapping each pixel to a cluster index.</param>
-        /// <param name="k">The number of clusters.</param>
-        /// <returns>A new list of centroids representing the updated cluster centers.</returns>
-        private static List<Color> RecalculateCentroids(List<Color> pixels, int[] assignments, int k)
-        {
-            int[] counts = new int[k];
-            long[] sumR = new long[k];
-            long[] sumG = new long[k];
-            long[] sumB = new long[k];
-
-            for (int i = 0; i < pixels.Count; i++)
-            {
-                int cluster = assignments[i];
-                counts[cluster]++;
-                sumR[cluster] += pixels[i].R;
-                sumG[cluster] += pixels[i].G;
-                sumB[cluster] += pixels[i].B;
-            }
-
-            List<Color> newCentroids = new List<Color>(k);
-            for (int i = 0; i < k; i++)
-            {
-                if (counts[i] == 0)
-                {
-                    newCentroids.Add(Color.FromArgb(0, 0, 0));
-                }
-                else
-                {
-                    int r = (int)(sumR[i] / counts[i]);
-                    int g = (int)(sumG[i] / counts[i]);
-                    int b = (int)(sumB[i] / counts[i]);
-                    newCentroids.Add(Color.FromArgb(r, g, b));
-                }
-            }
-
-            return newCentroids;
-        }
 
         #endregion
     }
