@@ -146,14 +146,14 @@ namespace muZilla.Controllers
                 fileBytes = memoryStream.ToArray();
             }
 
-            await _fileStorageService.CreateFileInDirectoryAsync(request.registerDTO.loginDTO.Login, "pic.jpg", fileBytes);
-            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = request.registerDTO.loginDTO.Login + "/pic.jpg", DomainColor = "69,139,69" });
+            await _fileStorageService.CreateFileInDirectoryAsync(request.registerDTO.LoginDTO.Login, "pic.jpg", fileBytes);
+            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = request.registerDTO.LoginDTO.Login + "/pic.jpg", DomainColor = "69,139,69" });
 
-            request.registerDTO.userDTO.userPublicDataDTO.AccessLevelId = access_id;
-            request.registerDTO.userDTO.userPublicDataDTO.ProfilePictureId = _imageService.GetNewestAsync();
+            request.registerDTO.UserDTO.UserPublicData.AccessLevelId = access_id;
+            request.registerDTO.UserDTO.UserPublicData.ProfilePictureId = _imageService.GetNewestAsync();
 
             await _userService.CreateUserAsync(request.registerDTO);
-            _userService.SendEmail(request.registerDTO.loginDTO.Login, request.registerDTO.userDTO.Email);
+            _userService.SendEmail(request.registerDTO.LoginDTO.Login, request.registerDTO.UserDTO.Email);
 
             return Ok();
         }

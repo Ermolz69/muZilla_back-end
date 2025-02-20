@@ -157,15 +157,15 @@ namespace muZilla.Application.Services
             if (IsUserValid(registerDTO.LoginDTO))
             {
                 User user = (await _repository.GetByIdAsync<User>(id))!;
-                user.Username = registerDTO.UserDTO.userPublicDataDTO.Username;
+                user.Username = registerDTO.UserDTO.UserPublicData.Username;
                 user.Email = registerDTO.UserDTO.Email;
                 user.Login = registerDTO.LoginDTO.Login;
                 user.PhoneNumber = registerDTO.UserDTO.PhoneNumber;
                 user.Password = registerDTO.LoginDTO.Password;
                 user.DateOfBirth = registerDTO.UserDTO.DateOfBirth;
                 user.ReceiveNotifications = registerDTO.UserDTO.ReceiveNotifications;
-                user.AccessLevel = (await _repository.GetByIdAsync<AccessLevel>(registerDTO.UserDTO.userPublicDataDTO.AccessLevelId))!;
-                user.ProfilePicture = (await _repository.GetByIdAsync<Image>(registerDTO.UserDTO.userPublicDataDTO.ProfilePictureId))!;
+                user.AccessLevel = (await _repository.GetByIdAsync<AccessLevel>(registerDTO.UserDTO.UserPublicData.AccessLevelId))!;
+                user.ProfilePicture = (await _repository.GetByIdAsync<Image>(registerDTO.UserDTO.UserPublicData.ProfilePictureId))!;
 
                 await _repository.SaveChangesAsync();
             }
