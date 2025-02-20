@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using muZilla.Application.Services;
+using muZilla.Entities.Models;
+using muZilla.Application.DTOs;
 
-using muZilla.Services;
-using muZilla.Models;
-using muZilla.DTOs;
-using System.Drawing;
 
 namespace muZilla.Controllers
 {
@@ -48,7 +47,7 @@ namespace muZilla.Controllers
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<Models.Image?> GetImageById(int id)
+        public async Task<Entities.Models.Image?> GetImageById(int id)
         {
             return await _imageService.GetImageById(id);
         }

@@ -6,11 +6,11 @@ using System.Text;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 
-using muZilla.Services;
-using muZilla.Models;
-using muZilla.DTOs;
-using System.Net.Mail;
-using System.Net;
+using muZilla.Application.Services;
+using muZilla.Entities.Models;
+using muZilla.Application.DTOs;
+using muZilla.Entities.Enums;
+using muZilla.Application.DTOs.User;
 
 namespace muZilla.Controllers
 {
@@ -42,14 +42,14 @@ namespace muZilla.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateUser(UserDTO userDTO)
+        public async Task<IActionResult> CreateUser(RegisterDTO registerDTO)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            await _userService.CreateUserAsync(userDTO);
+            await _userService.CreateUserAsync(registerDTO);
             return Ok();
         }
 
@@ -76,14 +76,14 @@ namespace muZilla.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdateUserByIdAsync(int id, UserDTO userDTO)
+        public async Task<IActionResult> UpdateUserByIdAsync(int id, RegisterDTO registerDTO)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            await _userService.UpdateUserByIdAsync(id, userDTO);
+            await _userService.UpdateUserByIdAsync(id, registerDTO);
             return Ok();
         }
 
@@ -92,15 +92,23 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="id">The unique identifier of the user to delete.</param>
         /// <returns>A 200 OK response upon successful deletion.</returns>
-        [HttpDelete("delete/{id}")]
+        [HttpDelete("delete")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> DeleteUserByIdAsync(int id)
+        public async Task<IActionResult> DeleteUserByIdAsync()
         {
+            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrEmpty(userLogin))
+            {
+                return Unauthorized("Invalid or missing token.");
+            }
+
+            int id = await _userService.GetIdByLoginAsync(userLogin);
             await _userService.DeleteUserByIdAsync(id);
             return Ok();
         }
+
 
         /// <summary>
         /// Registers a new user along with their profile picture.
@@ -111,7 +119,7 @@ namespace muZilla.Controllers
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> RegisterUserFullyAsync([FromForm] UserDTO userDTO, [FromForm] IFormFile? profile)
+        public async Task<IActionResult> RegisterUserFullyAsync([FromForm] RegisterDTO registerDTO, [FromForm] IFormFile? profile)
         {
             int access_id = await _accessLevelService.CreateDefaultAccessLevelAsync();
 
@@ -136,14 +144,14 @@ namespace muZilla.Controllers
                 fileBytes = memoryStream.ToArray();
             }
 
-            await _fileStorageService.CreateFileInDirectoryAsync(userDTO.Login, "pic.jpg", fileBytes);
-            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = userDTO.Login + "/pic.jpg", DomainColor = "69,139,69" });
+            await _fileStorageService.CreateFileInDirectoryAsync(registerDTO.loginDTO.Login, "pic.jpg", fileBytes);
+            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = registerDTO.loginDTO.Login + "/pic.jpg", DomainColor = "69,139,69" });
 
-            userDTO.AccessLevelId = access_id;
-            userDTO.ProfilePictureId = _imageService.GetNewestAsync();
+            registerDTO.userDTO.userPublicDataDTO.AccessLevelId = access_id;
+            registerDTO.userDTO.userPublicDataDTO.ProfilePictureId = _imageService.GetNewestAsync();
 
-            await _userService.CreateUserAsync(userDTO);
-            await _userService.SendEmail(userDTO.Login, userDTO.Email);
+            await _userService.CreateUserAsync(registerDTO);
+            _userService.SendEmail(registerDTO.loginDTO.Login, registerDTO.userDTO.Email);
 
             return Ok();
         }
@@ -151,7 +159,7 @@ namespace muZilla.Controllers
         /// <summary>
         /// Logs in a user and generates a JWT token.
         /// </summary>
-        /// <param name="login">The user's login.</param>
+        /// <param name="login">The user's login OR email.</param>
         /// <param name="password">The user's password.</param>
         /// <returns>
         /// A 200 OK response with the generated token, or a 400 Bad Request if the login credentials are invalid.
@@ -159,12 +167,12 @@ namespace muZilla.Controllers
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult Login(string login, string password)
+        public IActionResult Login(LoginDTO loginDTO)
         {
-            int res = _userService.CanLogin(login, password);
-            if (res == -2) return BadRequest("User is banned. You acted like a dog shit. Go cry.");
-            if (res != 1) return BadRequest("Incorrect login or incorrect password. Access denied.");
-            var token = GenerateJwtToken(login);
+            LoginResultType res = _userService.CanLogin(loginDTO);
+            if (res == LoginResultType.Banned) return BadRequest("Something went wrong.");
+            if (res == LoginResultType.NotFound || res == LoginResultType.IncorrectData) return BadRequest($"Incorrect login or incorrect password. Access denied. Code: {res.ToString()}");
+            var token = GenerateJwtToken(loginDTO.Login);
             return Ok(new { token });
         }
 
@@ -177,7 +185,7 @@ namespace muZilla.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public int GetIdByLogin(string login)
         {
-            return _userService.GetIdByLogin(login);
+            return _userService.GetIdByLoginAsync(login).Result;
         }
 
         /// <summary>

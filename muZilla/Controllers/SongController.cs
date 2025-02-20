@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
-using muZilla.Models;
-using muZilla.Services;
-using muZilla.DTOs;
-using muZilla.DTOs.Message;
+using muZilla.Entities.Models;
+using muZilla.Application.Services;
+using muZilla.Application.DTOs;
+using muZilla.Application.DTOs.Song;
 using System.Security.Claims;
-using System.Diagnostics;
 using NAudio.Wave;
 
 
@@ -122,7 +121,7 @@ namespace muZilla.Controllers
                 return Unauthorized();
             }
 
-            var receiverId = _userService.GetIdByLogin(login);
+            var receiverId = _userService.GetIdByLoginAsync(login).Result;
 
 
             TimeSpan duration;

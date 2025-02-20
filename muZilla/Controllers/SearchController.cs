@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using muZilla.Services;
-using muZilla.Models;
+using muZilla.Application.Services;
+using muZilla.Entities.Models;
 
 namespace muZilla.Controllers
 {
@@ -20,9 +20,9 @@ namespace muZilla.Controllers
         /// Example: GET /api/search/users?username=John&email=john@example.com
         /// </summary>
         [HttpGet("users")]
-        public async Task<IActionResult> SearchUsers([FromQuery] string? username, [FromQuery] string? email)
+        public async Task<IActionResult> SearchUsers([FromQuery] string? username, [FromQuery] string? email, [FromQuery] int? publicId)
         {
-            var results = await _searchService.SearchUsersAsync(username, email);
+            var results = await _searchService.SearchUsersAsync(username, email, publicId);
             if (results == null || results.Count == 0)
                 return NotFound("No results found");
             return Ok(results);
@@ -33,7 +33,7 @@ namespace muZilla.Controllers
         /// Example: GET /api/search/songs?title=love&genres=rock,pop&hasExplicit=true&fromDate=2023-01-01&toDate=2023-12-31
         /// </summary>
         [HttpGet("songs")]
-        public async Task<IActionResult> SearchSongs([FromQuery] DTOs.SongSearchParametersDTO parameters)
+        public async Task<IActionResult> SearchSongs([FromQuery] Application.DTOs.Song.SongSearchParametersDTO parameters)
         {
             // Validate date range
             if (parameters.FromDate.HasValue && parameters.ToDate.HasValue && parameters.FromDate > parameters.ToDate)

@@ -1,7 +1,7 @@
 ﻿using System.Drawing;
 using Microsoft.AspNetCore.Mvc;
-using muZilla.Models;
-using muZilla.Services;
+using muZilla.Entities.Models;
+using muZilla.Application.Services;
 
 namespace muZilla.Controllers
 {
@@ -16,27 +16,6 @@ namespace muZilla.Controllers
         {
             _fileStorageService = fileStorageService;
             _userService = userService;
-        }
-
-        /// <summary>
-        /// Creates a user-specific directory if it does not already exist.
-        /// </summary>
-        /// <param name="login">The login of the user.</param>
-        /// <returns>A response indicating the success or failure of the operation.</returns>
-        [HttpPost("createdirectory")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateUserDirectory(string login)
-        {
-            try
-            {
-                await _fileStorageService.CreateUserDirectoryIfNotExistsAsync(login);
-                return Ok("Directory created successfully.");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error occurred while creating directory: {ex.Message}");
-            }
         }
 
         /// <summary>
@@ -73,28 +52,6 @@ namespace muZilla.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Creates a directory for a specific song in a user's directory.
-        /// </summary>
-        /// <param name="login">The login of the user.</param>
-        /// <param name="songId">The ID of the song.</param>
-        /// <returns>A response indicating the success or failure of the operation.</returns>
-        [HttpPost("createsongdirectory")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateSongDirectory(string login, int songId)
-        {
-            try
-            {
-                await _fileStorageService.CreateSongDirectoryInDirectoryAsync(login, songId);
-                return Ok("Directory of song created successfully.");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error occurred while creating directory: {ex.Message}");
             }
         }
 
@@ -212,7 +169,7 @@ namespace muZilla.Controllers
             string contentType;
             bool enableRangeProcessing;
 
-            result.SetAll(out stream, out contentType, out enableRangeProcessing);
+            result.GetStreamDetails(out stream, out contentType, out enableRangeProcessing);
 
             return File(stream, contentType, enableRangeProcessing: enableRangeProcessing);
         }
@@ -241,17 +198,7 @@ namespace muZilla.Controllers
 
                 using var image = new Bitmap(memoryStream);
 
-                var pixels = new List<Color>();
-
-                for (int y = 0; y < image.Height; y++)
-                {
-                    for (int x = 0; x < image.Width; x++)
-                    {
-                        pixels.Add(image.GetPixel(x, y));
-                    }
-                }
-
-                Color dominantColor = _fileStorageService.GetDominantColor(pixels);
+                Color dominantColor = _fileStorageService.GetDominantColor(image);
 
                 return Ok($"{dominantColor.R},{dominantColor.G},{dominantColor.B}");
             }
