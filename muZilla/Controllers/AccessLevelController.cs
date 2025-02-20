@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using muZilla.Application.Services;
 using muZilla.Entities.Models;
 using muZilla.Application.DTOs;
+using System.Security.Claims;
 
 namespace muZilla.Controllers
 {
@@ -13,10 +14,14 @@ namespace muZilla.Controllers
     public class AccessLevelController : ControllerBase
     {
         private readonly AccessLevelService _accessLevelService;
+        private readonly UserService _userService;
+        private readonly IConfiguration _config;
 
-        public AccessLevelController(AccessLevelService accessLevelService)
+        public AccessLevelController(AccessLevelService accessLevelService, UserService userService, IConfiguration config)
         {
             _accessLevelService = accessLevelService;
+            _userService = userService;
+            _config = config;
         }
 
         /// <summary>
@@ -28,6 +33,7 @@ namespace muZilla.Controllers
         /// or a 400 Bad Request response if the provided data is invalid.
         /// </returns>
         [HttpPost("create")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateAccessLevel(AccessLevelDTO accessLevelDTO)
@@ -35,6 +41,12 @@ namespace muZilla.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            // test method
+            if (!_config.GetSection("Owners").Get<string[]>()!.Contains(User.FindFirst(ClaimTypes.Name)?.Value)) 
+            {
+                return BadRequest();
             }
 
             await _accessLevelService.CreateAccessLevelAsync(accessLevelDTO);
@@ -64,6 +76,7 @@ namespace muZilla.Controllers
         /// or a 400 Bad Request response if the input is invalid.
         /// </returns>
         [HttpPatch("update/{id}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -73,6 +86,13 @@ namespace muZilla.Controllers
             {
                 return BadRequest(ModelState);
             }
+            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrEmpty(userLogin))
+            {
+                return Unauthorized("Invalid or missing token.");
+            }
+
+            AccessLevelService.EnsureUserCanBanUser(await _userService.GetUserByLoginAsync(userLogin));
 
             await _accessLevelService.UpdateAccessLevelByIdAsync(id, accessLevelDTO);
             return Ok();
@@ -84,12 +104,21 @@ namespace muZilla.Controllers
         /// <param name="id">The unique identifier of the access level to delete.</param>
         /// <returns>A 200 OK response upon successful deletion.</returns>
         [HttpDelete("delete/{id}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteAccessLevelById(int id)
         {
-            await _accessLevelService.DeleteAccessLevelByIdAsync(id);
-            return Ok();
+            // test method
+            if (!_config.GetSection("Owners").Get<string[]>()!.Contains(User.FindFirst(ClaimTypes.Name)?.Value))
+            {
+                return BadRequest();
+            }
+
+            if (await _accessLevelService.DeleteAccessLevelByIdAsync(id))
+                return Ok();
+
+            return BadRequest();
         }
 
         /// <summary>
@@ -98,9 +127,16 @@ namespace muZilla.Controllers
         /// <returns>The unique identifier of the newly created default access level.</returns>
         [HttpGet("default")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<int> CreateDefaultAsync()
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CreateDefaultAsync()
         {
-            return await _accessLevelService.CreateDefaultAccessLevelAsync();
+            // test method
+            if (!_config.GetSection("Owners").Get<string[]>()!.Contains(User.FindFirst(ClaimTypes.Name)?.Value))
+            {
+                return BadRequest();
+            }
+
+            return Ok(await _accessLevelService.CreateDefaultAccessLevelAsync());
         }
     }
 

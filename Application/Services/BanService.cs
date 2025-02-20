@@ -291,11 +291,11 @@ namespace muZilla.Application.Services
                 .Take(20)
                 .Select(b => new BanDTO
                 {
-                    BannedByUsername = b.BannedByUser != null ? b.BannedByUser.Login : "System",
+                    AdminId = b.BannedByUser != null ? b.BannedByUser.Id : -1,
                     WhatIsBanned = b.BanType,
-                    BannedUsername = b.BannedUser != null ? b.BannedUser.Login : "",
-                    BannedSongTitle = b.BannedSong != null ? b.BannedSong.Title : "",
-                    BannedCollectionName = b.BannedCollection != null ? b.BannedCollection.Title : "",
+                    UserId = b.BannedUser != null ? b.BannedUser.Id : -1,
+                    SongId = b.BannedSong != null ? b.BannedSong.Id : -1,
+                    CollectionId = b.BannedCollection != null ? b.BannedCollection.Id : -1,
                     Reason = b.Reason,
                     BanUntilUtc = b.BanUntilUtc
                 })

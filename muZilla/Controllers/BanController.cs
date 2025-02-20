@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using muZilla.Application.Services;
 using muZilla.Application.DTOs.Ban;
 using muZilla.Entities.Enums;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace muZilla.Controllers
 {
@@ -43,6 +44,7 @@ namespace muZilla.Controllers
         [Authorize]
         public async Task<IActionResult> BanUser([FromBody] BanRequestDTO banRequest)
         {
+            if(!ModelState.IsValid)
             if (banRequest == null ||
                 string.IsNullOrWhiteSpace(banRequest.Reason) ||
                 banRequest.BanUntilUtc <= DateTime.UtcNow)

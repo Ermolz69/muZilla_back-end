@@ -1,5 +1,6 @@
 ﻿using muZilla.Entities.Enums;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace muZilla.Entities.Models
 {
@@ -18,6 +19,7 @@ namespace muZilla.Entities.Models
         public MessageType Type { get; set; }
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        [ForeignKey("ChatId")]
         public virtual Chat Chat { get; set; }
 
     }

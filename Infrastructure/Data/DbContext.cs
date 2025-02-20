@@ -188,9 +188,10 @@ namespace muZilla.Infrastructure.Data
 
             modelBuilder.Entity<Chat>()
                 .HasMany(c => c.Messages)
-                .WithOne()
+                .WithOne(m => m.Chat)
                 .HasForeignKey(m => m.ChatId)
                 .OnDelete(DeleteBehavior.Cascade);
+
         }
     }
 }

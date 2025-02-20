@@ -29,16 +29,16 @@ namespace muZilla.Application.Services
         /// <summary>
         /// Checks if the provided user data is valid for creating a new user.
         /// </summary>
-        /// <param name="userDTO">The DTO object containing user data to validate.</param>
+        /// <param name="UserDTO">The DTO object containing user data to validate.</param>
         /// <returns>
         /// <c>true</c> if the user data is valid (i.e., the login does not already exist in the database); otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
         /// This method verifies if the user's login is unique by checking the database.
         /// </remarks>
-        public bool IsUserValid(LoginDTO loginDTO)
+        public bool IsUserValid(LoginDTO LoginDTO)
         {
-            if (_repository.GetAllAsync<User>().Result.Select(u => u).Where(u => u.Login == loginDTO.Login).Any())
+            if (_repository.GetAllAsync<User>().Result.Select(u => u).Where(u => u.Login == LoginDTO.Login).Any())
                 return false;
 
             return true;
@@ -54,7 +54,7 @@ namespace muZilla.Application.Services
         /// <summary>
         /// Creates a new user based on the provided data.
         /// </summary>
-        /// <param name="userDTO">The DTO object containing user data for creation.</param>
+        /// <param name="UserDTO">The DTO object containing user data for creation.</param>
         /// <returns>An asynchronous task representing the user creation process.</returns>
         /// <remarks>
         /// 1. Validates the user data using the <see cref="IsUserValid(UserDTO)"/> method.
@@ -64,22 +64,22 @@ namespace muZilla.Application.Services
         /// </remarks>
         public async Task CreateUserAsync(RegisterDTO registerDTO)
         {
-            if (IsUserValid(registerDTO.loginDTO))
+            if (IsUserValid(registerDTO.LoginDTO))
             {
                 User user = new User()
                 {
-                    Username = registerDTO.userDTO.userPublicDataDTO.Username,
-                    Email = registerDTO.userDTO.Email,
-                    Login = registerDTO.loginDTO.Login,
-                    PhoneNumber = registerDTO.userDTO.PhoneNumber,
-                    Password = registerDTO.loginDTO.Password,
-                    DateOfBirth = registerDTO.userDTO.DateOfBirth,
-                    ReceiveNotifications = registerDTO.userDTO.ReceiveNotifications,
+                    Username = registerDTO.UserDTO.UserPublicData.Username,
+                    Email = registerDTO.UserDTO.Email,
+                    Login = registerDTO.LoginDTO.Login,
+                    PhoneNumber = registerDTO.UserDTO.PhoneNumber,
+                    Password = registerDTO.LoginDTO.Password,
+                    DateOfBirth = registerDTO.UserDTO.DateOfBirth,
+                    ReceiveNotifications = registerDTO.UserDTO.ReceiveNotifications,
                     IsBanned = false,
                     PublicId = GetPublicIdUnique(),
                     TwoFactoredAuthentification = false,
-                    AccessLevel = (await _repository.GetByIdAsync<AccessLevel>(registerDTO.userDTO.userPublicDataDTO.AccessLevelId))!,
-                    ProfilePicture = (await _repository.GetByIdAsync<Image>(registerDTO.userDTO.userPublicDataDTO.ProfilePictureId))!
+                    AccessLevel = (await _repository.GetByIdAsync<AccessLevel>(registerDTO.UserDTO.UserPublicData.AccessLevelId))!,
+                    ProfilePicture = (await _repository.GetByIdAsync<Image>(registerDTO.UserDTO.UserPublicData.ProfilePictureId))!
                 };
 
                 await _repository.AddAsync<User>(user);
@@ -144,7 +144,7 @@ namespace muZilla.Application.Services
         /// Updates the details of an existing user by their ID using the provided user data.
         /// </summary>
         /// <param name="id">The unique identifier of the user to be updated.</param>
-        /// <param name="userDTO">The DTO object containing updated user data.</param>
+        /// <param name="UserDTO">The DTO object containing updated user data.</param>
         /// <returns>An asynchronous task representing the user update operation.</returns>
         /// <remarks>
         /// 1. Validates the new user data using the <see cref="IsUserValid(UserDTO)"/> method.
@@ -154,18 +154,18 @@ namespace muZilla.Application.Services
         /// </remarks>
         public async Task UpdateUserByIdAsync(int id, RegisterDTO registerDTO)
         {
-            if (IsUserValid(registerDTO.loginDTO))
+            if (IsUserValid(registerDTO.LoginDTO))
             {
                 User user = (await _repository.GetByIdAsync<User>(id))!;
-                user.Username = registerDTO.userDTO.userPublicDataDTO.Username;
-                user.Email = registerDTO.userDTO.Email;
-                user.Login = registerDTO.loginDTO.Login;
-                user.PhoneNumber = registerDTO.userDTO.PhoneNumber;
-                user.Password = registerDTO.loginDTO.Password;
-                user.DateOfBirth = registerDTO.userDTO.DateOfBirth;
-                user.ReceiveNotifications = registerDTO.userDTO.ReceiveNotifications;
-                user.AccessLevel = (await _repository.GetByIdAsync<AccessLevel>(registerDTO.userDTO.userPublicDataDTO.AccessLevelId))!;
-                user.ProfilePicture = (await _repository.GetByIdAsync<Image>(registerDTO.userDTO.userPublicDataDTO.ProfilePictureId))!;
+                user.Username = registerDTO.UserDTO.userPublicDataDTO.Username;
+                user.Email = registerDTO.UserDTO.Email;
+                user.Login = registerDTO.LoginDTO.Login;
+                user.PhoneNumber = registerDTO.UserDTO.PhoneNumber;
+                user.Password = registerDTO.LoginDTO.Password;
+                user.DateOfBirth = registerDTO.UserDTO.DateOfBirth;
+                user.ReceiveNotifications = registerDTO.UserDTO.ReceiveNotifications;
+                user.AccessLevel = (await _repository.GetByIdAsync<AccessLevel>(registerDTO.UserDTO.userPublicDataDTO.AccessLevelId))!;
+                user.ProfilePicture = (await _repository.GetByIdAsync<Image>(registerDTO.UserDTO.userPublicDataDTO.ProfilePictureId))!;
 
                 await _repository.SaveChangesAsync();
             }
@@ -215,12 +215,12 @@ namespace muZilla.Application.Services
         /// <remarks>
         /// This method retrieves the user by login, checks the password, and verifies if the user is not banned.
         /// </remarks>
-        public LoginResultType CanLogin(LoginDTO loginDTO)
+        public LoginResultType CanLogin(LoginDTO LoginDTO)
         {
-            User? user = _repository.GetAllAsync<User>().Result.Select(a => a).Where(a => a.Login == loginDTO.Login || a.Email == loginDTO.Login).FirstOrDefault();
+            User? user = _repository.GetAllAsync<User>().Result.Select(a => a).Where(a => a.Login == LoginDTO.Login || a.Email == LoginDTO.Login).FirstOrDefault();
 
             if (user == null) return LoginResultType.NotFound;
-            if (user.Password != loginDTO.Password) return LoginResultType.IncorrectData;
+            if (user.Password != LoginDTO.Password) return LoginResultType.IncorrectData;
             if (user.IsBanned) return LoginResultType.Banned;
 
             return LoginResultType.Success;

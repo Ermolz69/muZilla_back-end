@@ -1,12 +1,22 @@
 ﻿using muZilla.Entities.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace muZilla.Application.DTOs.Song
 {
+    /// <summary>
+    /// Data Transfer Object for a song and its remixes.
+    /// </summary>
     public class SongAndRemixesDTO
     {
-        public muZilla.Entities.Models.Song song;
+        /// <summary>
+        /// The original song.
+        /// </summary>
+        [Required(ErrorMessage = "Song is required.")]
+        public Entities.Models.Song Song { get; set; }
 
-        // сюда будем доавблять ремиксы когда продолжать типо серч типо експандить сонгу
-        public virtual ICollection<muZilla.Entities.Models.Song> Remixes { get; set; }
+        /// <summary>
+        /// A collection of remixes for the song.
+        /// </summary>
+        public ICollection<Entities.Models.Song> Remixes { get; set; } = new List<Entities.Models.Song>();
     }
 }

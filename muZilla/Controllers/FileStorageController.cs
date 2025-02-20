@@ -198,7 +198,7 @@ namespace muZilla.Controllers
 
                 using var image = new Bitmap(memoryStream);
 
-                Color dominantColor = _fileStorageService.GetDominantColor(image);
+                Color dominantColor = FileStorageService.GetDominantColor(image);
 
                 return Ok($"{dominantColor.R},{dominantColor.G},{dominantColor.B}");
             }

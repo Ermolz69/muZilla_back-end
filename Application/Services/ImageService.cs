@@ -37,7 +37,7 @@ namespace muZilla.Application.Services
 
                 using var image = new Bitmap(memoryStream);
 
-                Color color = _fileStorageService.GetDominantColor(image);
+                Color color = FileStorageService.GetDominantColor(image);
 
                 var _image = new Entities.Models.Image()
                 {

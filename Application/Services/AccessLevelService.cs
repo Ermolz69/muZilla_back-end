@@ -85,14 +85,16 @@ namespace muZilla.Application.Services
         /// </summary>
         /// <param name="id">The unique identifier of the access level to delete.</param>
         /// <returns>An asynchronous task representing the deletion operation.</returns>
-        public async Task DeleteAccessLevelByIdAsync(int id)
+        public async Task<bool> DeleteAccessLevelByIdAsync(int id)
         {
             AccessLevel? accessLevel = await _repository.GetByIdAsync<AccessLevel>(id);
             if (accessLevel != null)
             {
                 await _repository.RemoveAsync<AccessLevel>(accessLevel);
                 await _repository.SaveChangesAsync();
+                return true;
             }
+            return false;
         }
 
         /// <summary>
@@ -118,7 +120,7 @@ namespace muZilla.Application.Services
             return id;
         }
 
-        public BanResultType EnsureUserCanDoActions(User? user)
+        public static BanResultType EnsureUserCanDoActions(User? user)
         {
             BanResultType result = BanResultType.Success;
 
@@ -132,7 +134,7 @@ namespace muZilla.Application.Services
             return result;
         }
 
-        public BanResultType EnsureUserCanBanUser(User? user)
+        public static BanResultType EnsureUserCanBanUser(User? user)
         {
             BanResultType result = EnsureUserCanDoActions(user);
             if (result != BanResultType.Success)
@@ -142,7 +144,7 @@ namespace muZilla.Application.Services
 
             return BanResultType.Success;
         }
-        public BanResultType EnsureUserCanBanSong(User? user)
+        public static BanResultType EnsureUserCanBanSong(User? user)
         {
             BanResultType result = EnsureUserCanDoActions(user);
             if (result != BanResultType.Success)
@@ -153,7 +155,7 @@ namespace muZilla.Application.Services
             return BanResultType.Success;
         }
 
-        public BanResultType EnsureUserCanBanCollection(User? user)
+        public static BanResultType EnsureUserCanBanCollection(User? user)
         {
             BanResultType result = EnsureUserCanDoActions(user);
             if (result != BanResultType.Success)

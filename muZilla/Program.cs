@@ -7,6 +7,8 @@ using muZilla.Application.Services;
 using muZilla.Infrastructure.Data;
 using muZilla.Application.Interfaces;
 using muZilla.Infrastructure.Repository;
+using Microsoft.Extensions.Options;
+using muZilla.Swagger;
 
 namespace muZilla
 {
@@ -24,8 +26,23 @@ namespace muZilla
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.OperationFilter<SwaggerFileUploadOperationFilter>();
+            });
+            builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = 104857600; // 100MB, можно увеличить
+            });
+
             builder.Services.AddDbContext<MuzillaDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
+                {
+                    sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+                })
+            );
+
+
 
             // Register custom services
             builder.Services.AddScoped<AccessLevelService>();

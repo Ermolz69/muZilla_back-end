@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using muZilla.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using muZilla.Infrastructure.Data;
 namespace muZilla.Infrastructure.Migrations
 {
     [DbContext(typeof(MuzillaDbContext))]
-    partial class MuzillaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250220130644_ChatIdFixed")]
+    partial class ChatIdFixed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -304,6 +307,9 @@ namespace muZilla.Infrastructure.Migrations
                     b.Property<int>("ChatId")
                         .HasColumnType("int");
 
+                    b.Property<int>("ChatId1")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -322,6 +328,8 @@ namespace muZilla.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ChatId");
+
+                    b.HasIndex("ChatId1");
 
                     b.ToTable("Messages");
                 });
@@ -672,9 +680,15 @@ namespace muZilla.Infrastructure.Migrations
 
             modelBuilder.Entity("muZilla.Entities.Models.Message", b =>
                 {
-                    b.HasOne("muZilla.Entities.Models.Chat", "Chat")
+                    b.HasOne("muZilla.Entities.Models.Chat", null)
                         .WithMany("Messages")
                         .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("muZilla.Entities.Models.Chat", "Chat")
+                        .WithMany()
+                        .HasForeignKey("ChatId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

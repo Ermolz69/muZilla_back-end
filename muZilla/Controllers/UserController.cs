@@ -11,6 +11,7 @@ using muZilla.Entities.Models;
 using muZilla.Application.DTOs;
 using muZilla.Entities.Enums;
 using muZilla.Application.DTOs.User;
+using muZilla.ResponseRequestModels;
 
 namespace muZilla.Controllers
 {
@@ -119,13 +120,14 @@ namespace muZilla.Controllers
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> RegisterUserFullyAsync([FromForm] RegisterDTO registerDTO, [FromForm] IFormFile? profile)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> RegisterUserFullyAsync([FromForm] RegisterUserRequest request)
         {
             int access_id = await _accessLevelService.CreateDefaultAccessLevelAsync();
 
             byte[] fileBytes;
 
-            if (profile == null)
+            if (request.profile == null)
             {
                 var rootPath = Directory.GetCurrentDirectory();
                 var filePath = Path.Combine(rootPath, "DefaultPictures", "default.jpg");
@@ -140,18 +142,18 @@ namespace muZilla.Controllers
             else
             {
                 using var memoryStream = new MemoryStream();
-                await profile.CopyToAsync(memoryStream);
+                await request.profile.CopyToAsync(memoryStream);
                 fileBytes = memoryStream.ToArray();
             }
 
-            await _fileStorageService.CreateFileInDirectoryAsync(registerDTO.loginDTO.Login, "pic.jpg", fileBytes);
-            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = registerDTO.loginDTO.Login + "/pic.jpg", DomainColor = "69,139,69" });
+            await _fileStorageService.CreateFileInDirectoryAsync(request.registerDTO.loginDTO.Login, "pic.jpg", fileBytes);
+            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = request.registerDTO.loginDTO.Login + "/pic.jpg", DomainColor = "69,139,69" });
 
-            registerDTO.userDTO.userPublicDataDTO.AccessLevelId = access_id;
-            registerDTO.userDTO.userPublicDataDTO.ProfilePictureId = _imageService.GetNewestAsync();
+            request.registerDTO.userDTO.userPublicDataDTO.AccessLevelId = access_id;
+            request.registerDTO.userDTO.userPublicDataDTO.ProfilePictureId = _imageService.GetNewestAsync();
 
-            await _userService.CreateUserAsync(registerDTO);
-            _userService.SendEmail(registerDTO.loginDTO.Login, registerDTO.userDTO.Email);
+            await _userService.CreateUserAsync(request.registerDTO);
+            _userService.SendEmail(request.registerDTO.loginDTO.Login, request.registerDTO.userDTO.Email);
 
             return Ok();
         }

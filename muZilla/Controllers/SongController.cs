@@ -7,6 +7,7 @@ using muZilla.Application.DTOs;
 using muZilla.Application.DTOs.Song;
 using System.Security.Claims;
 using NAudio.Wave;
+using muZilla.ResponseRequestModels;
 
 
 namespace muZilla.Controllers
@@ -97,10 +98,7 @@ namespace muZilla.Controllers
         /// <summary>
         /// Publishes a song with its associated files (audio, image, lyrics).
         /// </summary>
-        /// <param name="song">The audio file for the song.</param>
-        /// <param name="image">The optional image file for the song's cover.</param>
-        /// <param name="lyrics">The optional lyrics file for the song.</param>
-        /// <param name="songDTO">The data transfer object for the song details.</param>
+        /// <param name="request">The request containing the song file, optional image and lyrics, and song details.</param>
         /// <returns>A 200 OK response if successful, or appropriate error codes otherwise.</returns>
         [HttpPost("publish")]
         [Authorize]
@@ -108,11 +106,8 @@ namespace muZilla.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PublishSong(
-            [FromForm] IFormFile song,
-            [FromForm] IFormFile? image,
-            [FromForm] IFormFile? lyrics,
-            [FromForm] SongDTO songDTO)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> PublishSong([FromForm] PublishSongRequest request)
         {
             var login = User.FindFirst(ClaimTypes.Name)?.Value;
 
@@ -121,8 +116,7 @@ namespace muZilla.Controllers
                 return Unauthorized();
             }
 
-            var receiverId = _userService.GetIdByLoginAsync(login).Result;
-
+            var receiverId = await _userService.GetIdByLoginAsync(login);
 
             TimeSpan duration;
             byte[] songBytes;
@@ -133,7 +127,7 @@ namespace muZilla.Controllers
             {
                 using (var ms = new MemoryStream())
                 {
-                    await song.CopyToAsync(ms);
+                    await request.Song.CopyToAsync(ms);
                     songBytes = ms.ToArray();
                 }
 
@@ -144,7 +138,7 @@ namespace muZilla.Controllers
                     duration = reader.TotalTime;
                 }
 
-                songDTO.Length = (int)duration.TotalSeconds;
+                request.SongDTO.Length = (int)duration.TotalSeconds;
             }
             catch (Exception ex)
             {
@@ -166,10 +160,9 @@ namespace muZilla.Controllers
                 }
             }
 
+            string main_author = (await _userService.GetUserByIdAsync(request.SongDTO.AuthorIds[0])).Login;
 
-            string main_author = (await _userService.GetUserByIdAsync(songDTO.AuthorIds[0])).Login;
-
-            int id = await _songService.CreateSongAsync(songDTO);
+            int id = await _songService.CreateSongAsync(request.SongDTO);
             if (id == -1)
                 return BadRequest();
 
@@ -179,11 +172,11 @@ namespace muZilla.Controllers
                 "song.mp3",
                 songBytes);
 
-            if (lyrics != null)
+            if (request.Lyrics != null)
             {
                 using (var lyricsStream = new MemoryStream())
                 {
-                    await lyrics.CopyToAsync(lyricsStream);
+                    await request.Lyrics.CopyToAsync(lyricsStream);
                     byte[] lyricsBytes = lyricsStream.ToArray();
 
                     await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
@@ -194,13 +187,13 @@ namespace muZilla.Controllers
                 }
             }
 
-            if (image != null)
+            if (request.Image != null)
             {
                 using (var imageStream = new MemoryStream())
                 {
                     Console.WriteLine("Creating Image");
 
-                    await image.CopyToAsync(imageStream);
+                    await request.Image.CopyToAsync(imageStream);
                     byte[] imageBytes = imageStream.ToArray();
 
                     await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
