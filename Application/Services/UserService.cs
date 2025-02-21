@@ -43,7 +43,7 @@ namespace muZilla.Application.Services
 
             return true;
         }
-        public bool IsUserValid(uint id)
+        public bool IsUserValid(int id)
         {
             if (_repository.GetAllAsync<User>().Result.Select(u => u).Where(u => u.Id == id).Any())
                 return false;

@@ -4,6 +4,7 @@ using muZilla.Application.Services;
 using muZilla.Application.DTOs.Ban;
 using muZilla.Entities.Enums;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Security.Claims;
 
 namespace muZilla.Controllers
 {
@@ -42,9 +43,13 @@ namespace muZilla.Controllers
         /// </returns>
         [HttpPost("banUser")]
         [Authorize]
+        
         public async Task<IActionResult> BanUser([FromBody] BanRequestDTO banRequest)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             if (banRequest == null ||
                 string.IsNullOrWhiteSpace(banRequest.Reason) ||
                 banRequest.BanUntilUtc <= DateTime.UtcNow)
@@ -77,8 +82,11 @@ namespace muZilla.Controllers
         /// </returns>
         [HttpPost("unbanUser")]
         [Authorize]
-        public async Task<IActionResult> UnbanUser(int userId, int adminId)
+        public async Task<IActionResult> UnbanUser(int userId)
         {
+            var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
+
             if (userId <= 0 || adminId <= 0)
             {
                 return BadRequest("Invalid user or admin ID.");
@@ -101,11 +109,13 @@ namespace muZilla.Controllers
         /// <returns>
         /// An <see cref="IActionResult"/> indicating whether the user is banned.
         /// </returns>
-        [HttpGet("isBannedUser/{userId}")]
+        [HttpGet("isUserBanned/{userId}")]
         public async Task<IActionResult> IsUserBanned(int userId)
         {
-            BanResultType isBanned = await _banService.IsUserBannedAsync(userId);
-            return Ok(new { IsBanned = isBanned });
+            if(_userService.IsUserValid(userId))
+                return Ok(new { IsBanned = (await _banService.IsUserBannedAsync(userId) == BanResultType.ItBanned ? true : false) });
+
+            return BadRequest("not valid userId");
         }
 
         #endregion
@@ -123,11 +133,13 @@ namespace muZilla.Controllers
         [Authorize]
         public async Task<IActionResult> BanSong([FromBody] BanRequestDTO banRequest)
         {
-            if (banRequest == null 
-                || string.IsNullOrWhiteSpace(banRequest.Reason) 
-                || banRequest.BanUntilUtc <= DateTime.UtcNow)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Invalid ban request data.");
+                return BadRequest(ModelState);
+            }
+            if (banRequest.BanUntilUtc <= DateTime.UtcNow)
+            {
+                return BadRequest("Invalid BanUntilUtc.");
             }
 
             BanResultType result = await _banService.BanSongAsync(

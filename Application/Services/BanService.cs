@@ -313,11 +313,9 @@ namespace muZilla.Application.Services
         /// </returns>
         public async Task<BanResultType> IsUserBannedAsync(int userId)
         {
-            var activeBan = await _repository.GetAllAsync<Ban>().Result
-                .Where(b => b.BannedUserId == userId && b.BanUntilUtc > DateTime.UtcNow)
-                .FirstOrDefaultAsync();
+            var user = await _repository.GetByIdAsync<User>(userId);
 
-            return BanResultType.ItBanned;
+            return user.IsBanned == false ? BanResultType.ItNotBanned : BanResultType.ItBanned;
         }
 
         /// <summary>
