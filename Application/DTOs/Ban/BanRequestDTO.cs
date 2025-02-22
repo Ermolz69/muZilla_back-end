@@ -14,15 +14,6 @@ namespace muZilla.Application.DTOs.Ban
         [Range(1, int.MaxValue, ErrorMessage = "IdToBan must be greater than 0.")]
         public int IdToBan { get; set; }
 
-        //todo remove nahuy etot kall
-
-        /// <summary>
-        /// The ID of the admin performing the ban.
-        /// </summary>
-        [Required(ErrorMessage = "AdminId is required.")]
-        [Range(1, int.MaxValue, ErrorMessage = "AdminId must be greater than 0.")]
-        public int AdminId { get; set; }
-
         /// <summary>
         /// The reason for banning.
         /// </summary>

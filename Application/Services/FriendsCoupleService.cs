@@ -170,14 +170,16 @@ namespace muZilla.Application.Services
         /// </summary>
         /// <param name="id">The unique ID of the friendship.</param>
         /// <returns>An asynchronous task representing the deletion operation.</returns>
-        public async Task DeleteFriendsCoupleByIdAsync(int id)
+        public async Task<bool> DeleteFriendsCoupleByIdAsync(int id)
         {
             var friendCouple = await _repository.GetByIdAsync<FriendsCouple>(id);
             if (friendCouple != null)
             {
                 await _repository.RemoveAsync<FriendsCouple>(friendCouple);
                 await _repository.SaveChangesAsync();
+                return true;
             }
+            return false;
         }
 
         /// <summary>

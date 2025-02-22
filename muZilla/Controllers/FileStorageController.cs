@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using muZilla.Entities.Models;
 using muZilla.Application.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace muZilla.Controllers
 {
@@ -25,11 +27,15 @@ namespace muZilla.Controllers
         /// <param name="file">The file to be uploaded.</param>
         /// <returns>A response indicating the success or failure of the upload.</returns>
         [HttpPost("upload")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UploadFile(string login, IFormFile file)
+        public async Task<IActionResult> UploadFile(IFormFile file)
         {
+            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            if(userLogin == null)
+                return Unauthorized();
             try
             {
                 if (file == null || file.Length == 0)
@@ -41,7 +47,7 @@ namespace muZilla.Controllers
                 await file.CopyToAsync(memoryStream);
                 byte[] fileBytes = memoryStream.ToArray();
 
-                await _fileStorageService.CreateFileInDirectoryAsync(login, file.FileName, fileBytes);
+                await _fileStorageService.CreateFileInDirectoryAsync(userLogin, file.FileName, fileBytes);
 
                 return Ok("File uploaded successfully.");
             }

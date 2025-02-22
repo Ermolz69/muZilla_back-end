@@ -4,6 +4,7 @@ using muZilla.Entities.Models;
 
 using muZilla.Application.DTOs.Song;
 using muZilla.Application.Interfaces;
+using muZilla.Application.DTOs.User;
 
 namespace muZilla.Application.Services
 {
@@ -15,7 +16,23 @@ namespace muZilla.Application.Services
         {
             _repository = repository;
         }
+        /// <summary>
+        /// Checks if the provided song id is valid.
+        /// </summary>
+        /// <param name=id">song id.</param>
+        /// <returns>
+        /// <c>true</c> if the song id is valid; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method verifies if the song id exist in database.
+        /// </remarks>
+        public bool IsSongValid(int id)
+        {
+            if (_repository.GetAllAsync<Song>().Result.Select(u => u).Where(u => u.Id == id).Any())
+                return false;
 
+            return true;
+        }
         /// <summary>
         /// Updates the cover image of a song by its ID.
         /// </summary>

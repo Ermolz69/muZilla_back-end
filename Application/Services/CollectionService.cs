@@ -95,10 +95,10 @@ namespace muZilla.Application.Services
         /// <param name="id">The unique identifier of the collection to update.</param>
         /// <param name="collectionDTO">The data transfer object containing updated collection details.</param>
         /// <returns>An asynchronous task representing the update operation.</returns>
-        public async Task UpdateCollectionByIdAsync(int id, CollectionDTO collectionDTO)
+        public async Task<bool> UpdateCollectionByIdAsync(int id, CollectionDTO collectionDTO)
         {
             var collection = await GetCollectionByIdAsync(id);
-            if (collection == null) return;
+            if (collection == null) return false;
 
             collection.Title = collectionDTO.Title;
             collection.Description = collectionDTO.Description;
@@ -120,6 +120,7 @@ namespace muZilla.Application.Services
             }
 
             await _repository.SaveChangesAsync();
+            return true;
         }
 
         /// <summary>

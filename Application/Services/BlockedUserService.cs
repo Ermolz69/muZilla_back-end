@@ -19,6 +19,7 @@ namespace muZilla.Application.Services
         /// <param name="userId">The ID of the user initiating the block.</param>
         /// <param name="blockUserId">The ID of the user to be blocked.</param>
         /// <returns>An asynchronous task representing the operation.</returns>
+        /// <remarks>Method no implement Ids validation </remarks>
         public async Task BlockUserWithIdsAsync(int userId, int blockUserId)
         {
             await _repository.AddAsync<BlockedUser>(new BlockedUser() { UserId = userId, BlockedId = blockUserId });

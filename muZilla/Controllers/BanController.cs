@@ -5,6 +5,7 @@ using muZilla.Application.DTOs.Ban;
 using muZilla.Entities.Enums;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Claims;
+using muZilla.Entities.Models;
 
 namespace muZilla.Controllers
 {
@@ -14,6 +15,7 @@ namespace muZilla.Controllers
     {
         private readonly BanService _banService;
         private readonly UserService _userService;
+        private readonly SongService _songService;
         private readonly AccessLevelService _accessLevelService;
 
         /// <summary>
@@ -25,10 +27,12 @@ namespace muZilla.Controllers
         public BanController(
             BanService banService,
             UserService userService,
+            SongService songService,
             AccessLevelService accessLevelService)
         {
             _banService = banService;
             _userService = userService;
+            _songService = songService;
             _accessLevelService = accessLevelService;
         }
 
@@ -50,16 +54,16 @@ namespace muZilla.Controllers
             {
                 return BadRequest(ModelState);
             }
-            if (banRequest == null ||
-                string.IsNullOrWhiteSpace(banRequest.Reason) ||
-                banRequest.BanUntilUtc <= DateTime.UtcNow)
+            if (banRequest.BanUntilUtc <= DateTime.UtcNow)
             {
                 return BadRequest("Invalid ban request data.");
             }
+            var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
 
             BanResultType result = await _banService.BanUserAsync(
                 banRequest.IdToBan,
-                banRequest.AdminId,
+                adminId,
                 banRequest.Reason,
                 banRequest.BanUntilUtc
             );
@@ -76,7 +80,6 @@ namespace muZilla.Controllers
         /// Unbans a user.
         /// </summary>
         /// <param name="userId">The ID of the user to unban.</param>
-        /// <param name="adminId">The ID of the admin attempting to unban the user.</param>
         /// <returns>
         /// An <see cref="IActionResult"/> indicating the result of the unban operation.
         /// </returns>
@@ -86,11 +89,6 @@ namespace muZilla.Controllers
         {
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
-
-            if (userId <= 0 || adminId <= 0)
-            {
-                return BadRequest("Invalid user or admin ID.");
-            }
 
             BanResultType result = await _banService.UnbanUserAsync(userId, adminId);
 
@@ -142,9 +140,12 @@ namespace muZilla.Controllers
                 return BadRequest("Invalid BanUntilUtc.");
             }
 
+            var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
+
             BanResultType result = await _banService.BanSongAsync(
                 banRequest.IdToBan,
-                banRequest.AdminId,
+                adminId,
                 banRequest.Reason,
                 banRequest.BanUntilUtc
             );
@@ -161,18 +162,15 @@ namespace muZilla.Controllers
         /// Unbans a song.
         /// </summary>
         /// <param name="songId">The ID of the song to unban.</param>
-        /// <param name="adminId">The ID of the admin attempting to unban the song.</param>
         /// <returns>
         /// An <see cref="IActionResult"/> indicating the result of the unban operation.
         /// </returns>
         [HttpPost("unbanSong")]
         [Authorize]
-        public async Task<IActionResult> UnbanSong(int songId, int adminId)
+        public async Task<IActionResult> UnbanSong(int songId)
         {
-            if (songId <= 0 || adminId <= 0)
-            {
-                return BadRequest("Invalid song or admin ID.");
-            }
+            var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
 
             BanResultType result = await _banService.UnbanSongAsync(songId, adminId);
 
@@ -194,8 +192,10 @@ namespace muZilla.Controllers
         [HttpGet("isBannedSong/{songId}")]
         public async Task<IActionResult> IsSongBanned(int songId)
         {
-            BanResultType isBanned = await _banService.IsSongBannedAsync(songId);
-            return Ok(new { IsBanned = isBanned });
+            if (_songService.IsSongValid(songId))
+                return Ok(new { IsBanned = (await _banService.IsSongBannedAsync(songId) == BanResultType.ItBanned ? true : false) });
+
+            return BadRequest("not valid songId");
         }
 
         #endregion
@@ -213,16 +213,21 @@ namespace muZilla.Controllers
         [Authorize]
         public async Task<IActionResult> BanCollection([FromBody] BanRequestDTO banRequest)
         {
-            if (banRequest == null ||
-                string.IsNullOrWhiteSpace(banRequest.Reason) ||
-                banRequest.BanUntilUtc <= DateTime.UtcNow)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Invalid ban request data.");
+                return BadRequest(ModelState);
             }
+            if (banRequest.BanUntilUtc <= DateTime.UtcNow)
+            {
+                return BadRequest("Invalid ban request time.");
+            }
+
+            var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
 
             BanResultType result = await _banService.BanCollectionAsync(
                 banRequest.IdToBan,
-                banRequest.AdminId,
+                adminId,
                 banRequest.Reason,
                 banRequest.BanUntilUtc
             );
@@ -239,18 +244,15 @@ namespace muZilla.Controllers
         /// Unbans a collection.
         /// </summary>
         /// <param name="collectionId">The ID of the collection to unban.</param>
-        /// <param name="adminId">The ID of the admin attempting to unban the collection.</param>
         /// <returns>
         /// An <see cref="IActionResult"/> indicating the result of the unban operation.
         /// </returns>
         [HttpPost("unbanCollection")]
         [Authorize]
-        public async Task<IActionResult> UnbanCollection(int collectionId, int adminId)
+        public async Task<IActionResult> UnbanCollection(int collectionId)
         {
-            if (collectionId <= 0 || adminId <= 0)
-            {
-                return BadRequest("Invalid collection or admin ID.");
-            }
+            var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
 
             BanResultType result = await _banService.UnbanCollectionAsync(collectionId, adminId);
 
@@ -288,6 +290,19 @@ namespace muZilla.Controllers
         [Authorize]
         public async Task<IActionResult> GetLatestBans()
         {
+            var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var admin = adminLogin == null ? null : await _userService.GetUserByLoginAsync(adminLogin);
+
+
+            //todo
+            if (admin == null) { 
+                return BadRequest("You must be admin to view bans.");
+            }
+            if (!admin.AccessLevel.CanManageReports)
+            {
+                return BadRequest("You must have specified admin permissions to view bans.");
+            }
+
             var bans = await _banService.GetLatestBansAsync();
             return Ok(bans);
         }

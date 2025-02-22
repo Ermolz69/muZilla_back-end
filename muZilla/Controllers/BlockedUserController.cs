@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 
 using muZilla.Application.Services;
+using System.Security.Claims;
 
 namespace muZilla.Controllers
 {
@@ -12,30 +13,33 @@ namespace muZilla.Controllers
     {
         private readonly BlockedUserService _blockedUserService;
         private readonly FriendsCoupleService _friendsCoupleService;
+        private readonly UserService _userService;
 
-        public BlockedUserController(BlockedUserService blockedUserService, FriendsCoupleService friendsCoupleService)
+        public BlockedUserController(BlockedUserService blockedUserService, FriendsCoupleService friendsCoupleService, UserService userService)
         {
             _blockedUserService = blockedUserService;
             _friendsCoupleService = friendsCoupleService;
+            _userService = userService;
         }
 
         /// <summary>
         /// Blocks a user by their IDs. If the users are friends, their friendship is removed before blocking.
         /// </summary>
-        /// <param name="id">The ID of the user initiating the block.</param>
-        /// <param name="badId">The ID of the user to be blocked.</param>
+        /// <param name="BannedId">The ID of the user to be blocked.</param>
         /// <returns>A 200 OK response upon successful blocking.</returns>
         [HttpPost("block")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> BlockUserWithIds(int id, int badId)
+        public async Task<IActionResult> BlockUserWithIds(int BannedId)
         {
-            if (await _friendsCoupleService.CheckFriendsCouple(id, badId))
-            {
-                int i = await _friendsCoupleService.GetFriendsCoupleIdWithIds(id, badId);
+            var Login = User.FindFirst(ClaimTypes.Name)?.Value;
+            var BannerId = Login == null ? -1 : await _userService.GetIdByLoginAsync(Login);
+
+                int i = await _friendsCoupleService.GetFriendsCoupleIdWithIds(BannerId, BannedId);
                 await _friendsCoupleService.DeleteFriendsCoupleByIdAsync(i);
-            }
-            await _blockedUserService.BlockUserWithIdsAsync(id, badId);
+
+            await _blockedUserService.BlockUserWithIdsAsync(BannerId, BannedId);
             return Ok();
         }
 
@@ -43,14 +47,18 @@ namespace muZilla.Controllers
         /// Unblocks a previously blocked user by their IDs.
         /// </summary>
         /// <param name="id">The ID of the user initiating the unblock.</param>
-        /// <param name="badId">The ID of the user to be unblocked.</param>
+        /// <param name="BannedId">The ID of the user to be unblocked.</param>
         /// <returns>A 200 OK response upon successful unblocking.</returns>
         [HttpPost("unblock")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UnblockUserWithIds(int id, int badId)
+        public async Task<IActionResult> UnblockUserWithIds(int BannedId)
         {
-            await _blockedUserService.UnblockUserWithIdsAsync(id, badId);
+            var Login = User.FindFirst(ClaimTypes.Name)?.Value;
+            var BannerId = Login == null ? -1 : await _userService.GetIdByLoginAsync(Login);
+
+            await _blockedUserService.UnblockUserWithIdsAsync(BannerId, BannedId);
             return Ok();
         }
 
@@ -58,15 +66,18 @@ namespace muZilla.Controllers
         /// Checks if a user is blocked by their IDs.
         /// </summary>
         /// <param name="id">The ID of the user initiating the check.</param>
-        /// <param name="badId">The ID of the user being checked.</param>
+        /// <param name="BannedId">The ID of the user being checked.</param>
         /// <returns>
         /// Returns true if the user is blocked; otherwise, false.
         /// </returns>
         [HttpGet("check")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<bool> CheckWithIds(int id, int badId)
+        public async Task<bool> IsUserBanned(int BannedId)
         {
-            return _blockedUserService.CheckBlockedUser(id, badId);
+            var Login = User.FindFirst(ClaimTypes.Name)?.Value;
+            var BannerId = Login == null ? -1 : await _userService.GetIdByLoginAsync(Login);
+
+            return _blockedUserService.CheckBlockedUser(BannerId, BannedId);
         }
     }
 }

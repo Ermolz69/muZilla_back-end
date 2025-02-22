@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using muZilla.Application.Services;
 using muZilla.Entities.Models;
 using muZilla.Application.DTOs;
+using System.Security.Claims;
 
 namespace muZilla.Controllers
 {
@@ -13,10 +14,14 @@ namespace muZilla.Controllers
     public class CollectionController : ControllerBase
     {
         private readonly CollectionService _collectionService;
+        private readonly UserService _userService;
+        private readonly IConfiguration _config;
 
-        public CollectionController(CollectionService collectionService)
+        public CollectionController(CollectionService collectionService,UserService userService,IConfiguration config)
         {
             _collectionService = collectionService;
+            _userService = userService;
+            _config = config;
         }
 
         /// <summary>
@@ -27,11 +32,24 @@ namespace muZilla.Controllers
         /// Returns the ID of the newly created collection.
         /// </returns>
         [HttpPost("create")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<int> CreateCollection(CollectionDTO collectionDTO)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> CreateCollection(CollectionDTO collectionDTO)
         {
-            return await _collectionService.CreateCollectionAsync(collectionDTO);
+            if(!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var Login = User.FindFirst(ClaimTypes.Name)?.Value;
+            var Id = Login == null ? -1 : await _userService.GetIdByLoginAsync(Login);
+
+            if (Id == -1)
+                return Unauthorized();
+
+            collectionDTO.AuthorId = Id;
+
+            return Ok(await _collectionService.CreateCollectionAsync(collectionDTO));
         }
 
         /// <summary>
@@ -39,10 +57,10 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="id">The unique identifier of the collection.</param>
         /// <returns>The collection details.</returns>
-        [HttpGet("{id}")]
+        [HttpGet("{collectionId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<Collection> GetCollectionByIdAsync(int id)
+        public async Task<Collection?> GetCollectionByIdAsync(int id)
         {
             return await _collectionService.GetCollectionByIdAsync(id);
         }
@@ -50,30 +68,65 @@ namespace muZilla.Controllers
         /// <summary>
         /// Updates an existing collection by its unique identifier.
         /// </summary>
-        /// <param name="id">The unique identifier of the collection to update.</param>
+        /// <param name="collectionId">The unique identifier of the collection to update.</param>
         /// <param name="collectionDTO">The updated data for the collection.</param>
         /// <returns>A 200 OK response upon successful update.</returns>
-        [HttpPatch("update/{id}")]
+        [HttpPatch("update/{collectionId}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UpdateCollectionByIdAsync(int id, CollectionDTO collectionDTO)
+        public async Task<IActionResult> UpdateCollectionByIdAsync(int collectionId, CollectionDTO collectionDTO)
         {
-            await _collectionService.UpdateCollectionByIdAsync(id, collectionDTO);
-            return Ok();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var userId = userLogin == null ? -1 : await _userService.GetIdByLoginAsync(userLogin);
+
+            if (userId == -1)
+                return Unauthorized();
+
+            if ((await _collectionService.GetCollectionByIdAsync(collectionId))?.Author.Id == userId) 
+                return BadRequest("Only author can update collection.");
+
+            if (await _collectionService.UpdateCollectionByIdAsync(collectionId, collectionDTO))
+                return Ok();
+
+            return BadRequest("Unsuccessful attempt to update collection");
         }
 
         /// <summary>
         /// Deletes a collection by its unique identifier.
         /// </summary>
-        /// <param name="id">The unique identifier of the collection to delete.</param>
+        /// <param name="collectionId">The unique identifier of the collection to delete.</param>
         /// <returns>A 200 OK response upon successful deletion.</returns>
-        [HttpDelete("delete/{id}")]
+        [HttpDelete("delete/{collectionId}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteCollectionByIdAsync(int id)
+        public async Task<IActionResult> DeleteCollectionByIdAsync(int collectionId)
         {
-            await _collectionService.DeleteCollectionByIdAsync(id);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var userId = userLogin == null ? -1 : await _userService.GetIdByLoginAsync(userLogin);
+
+            if (userId == -1)
+                return Unauthorized();
+
+            // test method
+            if (_config.GetSection("Owners").Get<string[]>()!.Contains(User.FindFirst(ClaimTypes.Name)?.Value))
+            {
+                await _collectionService.DeleteCollectionByIdAsync(collectionId);
+                return Ok("collection deleted using owner permissions");
+            }
+
+            if ((await _collectionService.GetCollectionByIdAsync(collectionId))?.Author.Id == userId)
+                return BadRequest("Only author can delete collection.");
+
+            await _collectionService.DeleteCollectionByIdAsync(collectionId);
             return Ok();
         }
 
@@ -91,8 +144,11 @@ namespace muZilla.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> LikeCollection(int userId, int collectionId)
+        public async Task<IActionResult> LikeCollection(int collectionId)
         {
+            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var userId = userLogin == null ? -1 : await _userService.GetIdByLoginAsync(userLogin);
+
             await _collectionService.ToggleLikeCollectionAsync(userId, collectionId);
             return Ok();
         }
