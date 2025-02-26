@@ -2,6 +2,7 @@
 using muZilla.Application.Services;
 using muZilla.Entities.Models;
 using muZilla.Application.DTOs;
+using System.Security.Claims;
 
 
 namespace muZilla.Controllers
@@ -12,11 +13,13 @@ namespace muZilla.Controllers
     {
         private readonly ImageService _imageService;
         private readonly FileStorageService _fileStorageService;
+        private readonly IConfiguration _config;
 
-        public ImageController(ImageService imageService, FileStorageService fileStorageService)
+        public ImageController(ImageService imageService, FileStorageService fileStorageService, IConfiguration configuration)
         {
             _imageService = imageService;
             _fileStorageService = fileStorageService;
+            _config = configuration;
         }
 
         /// <summary>
@@ -31,8 +34,13 @@ namespace muZilla.Controllers
         {
             if (!ModelState.IsValid)
             {
-                Console.WriteLine("BAD REQUEST!");
                 return BadRequest(ModelState);
+            }
+
+            // test method
+            if (!_config.GetSection("Owners").Get<string[]>()!.Contains(User.FindFirst(ClaimTypes.Name)?.Value))
+            {
+                return BadRequest();
             }
 
             await _imageService.CreateImageAsync(imageDTO);
@@ -67,6 +75,11 @@ namespace muZilla.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            if (!_config.GetSection("Owners").Get<string[]>()!.Contains(User.FindFirst(ClaimTypes.Name)?.Value))
+            {
+                return BadRequest();
             }
 
             await _imageService.UpdateImageByIdAsync(id, imageDTO);

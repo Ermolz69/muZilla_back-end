@@ -1,7 +1,7 @@
 ﻿using System.Drawing;
+
 using muZilla.Application.DTOs;
 using muZilla.Application.Interfaces;
-using muZilla.Entities.Models;
 
 namespace muZilla.Application.Services
 {
@@ -31,6 +31,7 @@ namespace muZilla.Application.Services
             if (imageDTO.DomainColor == null)
             {
                 string[] separetedFilePath = imageDTO.ImageFilePath.Split('/');
+
                 var imageBytes = (await _fileStorageService.ReadFileFromSongAsync(separetedFilePath[0], int.Parse(separetedFilePath[1]), separetedFilePath[2], null))!;
 
                 using var memoryStream = new MemoryStream(imageBytes);
@@ -70,7 +71,7 @@ namespace muZilla.Application.Services
         /// <returns>The image if found, or null if not found.</returns>
         public async Task<Entities.Models.Image?> GetImageById(int id)
         {
-            var image = await _repository.GetByIdAsync<Entities.Models.Image>(id);
+            Entities.Models.Image? image = await _repository.GetByIdAsync<Entities.Models.Image>(id);
 
             return image;
         }
@@ -83,7 +84,7 @@ namespace muZilla.Application.Services
         /// <returns>An asynchronous task representing the update operation.</returns>
         public async Task UpdateImageByIdAsync(int id, ImageDTO imageDTO)
         {
-            var image = await _repository.GetByIdAsync<Entities.Models.Image>(id);
+            Entities.Models.Image? image = await _repository.GetByIdAsync<Entities.Models.Image>(id);
             if (image != null)
             {
                 image.ImageFilePath = imageDTO.ImageFilePath;
@@ -101,31 +102,12 @@ namespace muZilla.Application.Services
         /// <returns>An asynchronous task representing the deletion operation.</returns>
         public async Task DeleteImageByIdAsync(int id)
         {
-            var image = await _repository.GetByIdAsync<Entities.Models.Image>(id);
+            Entities.Models.Image? image = await _repository.GetByIdAsync<Entities.Models.Image>(id);
             if (image != null)
             {
                 await _repository.RemoveAsync<Entities.Models.Image>(image);
                 await _repository.SaveChangesAsync();
             }
-        }
-
-        /// <summary>
-        /// Retrieves the ID of the most recently added image in the database.
-        /// </summary>
-        /// <returns>The unique identifier of the latest image.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if no images are found.</exception>
-        public int GetNewestAsync()
-        {
-            var latestImage = _repository.GetAllAsync<Entities.Models.Image>().Result
-                .OrderByDescending(i => i.Id)
-                .FirstOrDefault();
-
-            if (latestImage == null)
-            {
-                throw new InvalidOperationException("No images found.");
-            }
-
-            return latestImage.Id;
         }
     }
 }

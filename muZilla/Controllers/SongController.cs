@@ -51,7 +51,7 @@ namespace muZilla.Controllers
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<Song> GetSongByIdAsync(int id)
+        public async Task<Song?> GetSongByIdAsync(int id)
         {
             return await _songService.GetSongByIdAsync(id);
         }
@@ -142,7 +142,6 @@ namespace muZilla.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка при обработке файла: {ex.Message}");
                 return BadRequest($"Ошибка при обработке файла: {ex.Message}");
             }
             finally
@@ -191,8 +190,6 @@ namespace muZilla.Controllers
             {
                 using (var imageStream = new MemoryStream())
                 {
-                    Console.WriteLine("Creating Image");
-
                     await request.Image.CopyToAsync(imageStream);
                     byte[] imageBytes = imageStream.ToArray();
 
@@ -202,11 +199,9 @@ namespace muZilla.Controllers
                         "cover.jpg",
                         imageBytes);
 
-                    await _imageService.CreateImageAsync(new ImageDTO { ImageFilePath = $"{login}/{id}/cover.jpg" });
+                    int imageId = await _imageService.CreateImageAsync(new ImageDTO { ImageFilePath = $"{login}/{id}/cover.jpg" });
 
-                    await _songService.UpdateCoverIdOnly(id, _imageService.GetNewestAsync());
-
-                    Console.WriteLine("Created!");
+                    await _songService.UpdateCoverIdOnly(id, imageId);
                 } 
             } // ник автора/id песни/ лимриксы mp3 и cover 
             else

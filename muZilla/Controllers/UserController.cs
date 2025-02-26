@@ -13,6 +13,7 @@ using muZilla.Application.DTOs;
 using muZilla.Entities.Enums;
 using muZilla.Application.DTOs.User;
 using muZilla.ResponseRequestModels;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace muZilla.Controllers
 {
@@ -137,16 +138,18 @@ namespace muZilla.Controllers
 
             await _fileStorageService.CreateFileInDirectoryAsync(request.registerDTO.LoginDTO.Login, "pic.jpg", fileBytes);
 
+            int imageId;
+
             using (var stream = request.profile.OpenReadStream())
             {
                 Bitmap image = new Bitmap(stream);
-                await _imageService.CreateImageAsync(new ImageDTO() { 
+                imageId =  await _imageService.CreateImageAsync(new ImageDTO() { 
                     ImageFilePath = request.registerDTO.LoginDTO.Login + "/pic.jpg", 
                     DomainColor = (FileStorageService.GetDominantColor(image)).ToString() 
                 });
             }
             request.registerDTO.UserDTO.UserPublicData.AccessLevelId = access_id;
-            request.registerDTO.UserDTO.UserPublicData.ProfilePictureId = _imageService.GetNewestAsync();
+            request.registerDTO.UserDTO.UserPublicData.ProfilePictureId = imageId;
 
             await _userService.CreateUserAsync(request.registerDTO);
             _userService.SendEmail(request.registerDTO.LoginDTO.Login, request.registerDTO.UserDTO.Email);
