@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 using System.Security.Claims;
+
 using muZilla.Entities.Models;
 using muZilla.Application.Services;
 using muZilla.Application.DTOs.Message;
@@ -10,7 +12,6 @@ namespace muZilla.Controllers
 {
     [ApiController]
     [Route("api/techsupport")]
-    [Authorize]
     public class TechSupportController : ControllerBase
     {
         private readonly TechSupportService _techSupportService;
@@ -139,12 +140,12 @@ namespace muZilla.Controllers
                 return Unauthorized();
 
             var supporterId = await _userService.GetIdByLoginAsync(supporterLogin);
-            if (supporterId == -1)
+            if (supporterId == null)
             {
                 return BadRequest("Supporter not found.");
             }
 
-            var message = await _techSupportService.GetOldestFreeRequestAsync(supporterLogin, supporterId);
+            var message = await _techSupportService.GetOldestFreeRequestAsync(supporterLogin, supporterId.Value);
             if (message == null)
             {
                 return NotFound("No free requests found.");
@@ -169,12 +170,12 @@ namespace muZilla.Controllers
                 return Unauthorized();
 
             var supporterId = await _userService.GetIdByLoginAsync(supporterLogin);
-            if (supporterId == -1)
+            if (supporterId == null)
             {
                 return BadRequest("Supporter not found.");
             }
 
-            var chats = await _techSupportService.GetChats(supporterId, supporterLogin, count);
+            var chats = await _techSupportService.GetChats(supporterId.Value, supporterLogin, count);
             return Ok(chats);
         }
     }

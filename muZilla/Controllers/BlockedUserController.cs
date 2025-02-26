@@ -8,7 +8,6 @@ namespace muZilla.Controllers
 {
     [ApiController]
     [Route("api/blocks")]
-    [Authorize]
     public class BlockedUserController : ControllerBase
     {
         private readonly BlockedUserService _blockedUserService;
@@ -25,21 +24,27 @@ namespace muZilla.Controllers
         /// <summary>
         /// Blocks a user by their IDs. If the users are friends, their friendship is removed before blocking.
         /// </summary>
-        /// <param name="BannedId">The ID of the user to be blocked.</param>
+        /// <param name="blockedId">The ID of the user to be blocked.</param>
         /// <returns>A 200 OK response upon successful blocking.</returns>
         [HttpPost("block")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> BlockUserWithIds(int BannedId)
+        public async Task<IActionResult> BlockUserWithIds(int blockedId)
         {
             var Login = User.FindFirst(ClaimTypes.Name)?.Value;
-            var BannerId = Login == null ? -1 : await _userService.GetIdByLoginAsync(Login);
+            var blockerId = Login == null ? null : await _userService.GetIdByLoginAsync(Login);
 
-                int i = await _friendsCoupleService.GetFriendsCoupleIdWithIds(BannerId, BannedId);
-                await _friendsCoupleService.DeleteFriendsCoupleByIdAsync(i);
+            int? idFriendCouple = await _friendsCoupleService.GetFriendsCoupleIdWithIds(blockerId, blockedId);
+            if (blockerId == null)
+                return Unauthorized();
 
-            await _blockedUserService.BlockUserWithIdsAsync(BannerId, BannedId);
+            if (!await _friendsCoupleService.DeleteFriendsCoupleByIdAsync(idFriendCouple))
+            {
+                return NotFound();
+            }
+            
+            await _blockedUserService.BlockUserWithIdsAsync(blockerId!.Value, blockedId);
             return Ok();
         }
 
@@ -56,7 +61,7 @@ namespace muZilla.Controllers
         public async Task<IActionResult> UnblockUserWithIds(int BannedId)
         {
             var Login = User.FindFirst(ClaimTypes.Name)?.Value;
-            var BannerId = Login == null ? -1 : await _userService.GetIdByLoginAsync(Login);
+            var BannerId = Login == null ? null : await _userService.GetIdByLoginAsync(Login);
 
             await _blockedUserService.UnblockUserWithIdsAsync(BannerId, BannedId);
             return Ok();
@@ -75,7 +80,7 @@ namespace muZilla.Controllers
         public async Task<bool> IsUserBanned(int BannedId)
         {
             var Login = User.FindFirst(ClaimTypes.Name)?.Value;
-            var BannerId = Login == null ? -1 : await _userService.GetIdByLoginAsync(Login);
+            var BannerId = Login == null ? null : await _userService.GetIdByLoginAsync(Login);
 
             return _blockedUserService.CheckBlockedUser(BannerId, BannedId);
         }

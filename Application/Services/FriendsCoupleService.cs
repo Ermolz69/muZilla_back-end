@@ -7,6 +7,7 @@ using muZilla.Entities.Models;
 
 using muZilla.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Entities.Enums;
 
 
 namespace muZilla.Application.Services
@@ -34,13 +35,13 @@ namespace muZilla.Application.Services
         /// Thrown if users are already friends or if a request already exists.
         /// </exception>
         /// <returns>An asynchronous task representing the operation.</returns>
-        public async Task CreateRequestFriendsCoupleAsync(int requester, int receiver)
+        public async Task<FriendCoupleResultType> CreateRequestFriendsCoupleAsync(int requester, int receiver)
         {
             if (await CheckFriendsCouple(requester, receiver))
-                throw new Exception("Users are already friends.");
+                return FriendCoupleResultType.AlreadyFriends;
 
             if (await RequestExistsAsync(requester, receiver))
-                throw new Exception("Request was already sent.");
+                return FriendCoupleResultType.RequestExists;
 
             var request = new Entities.Models.Request
             {
@@ -49,6 +50,8 @@ namespace muZilla.Application.Services
             };
 
             await tableClient.AddEntityAsync(request);
+
+            return FriendCoupleResultType.Success;
         }
 
         /// <summary>
@@ -165,12 +168,18 @@ namespace muZilla.Application.Services
             return exists;
         }
 
+        public async Task<FriendsCouple?> GetFriendCoupleByIdAsync(int? friendCoupleId)
+        {
+            return await _repository.GetByIdAsync<FriendsCouple>(friendCoupleId);
+        }
+
+
         /// <summary>
         /// Deletes a friendship by its unique ID.
         /// </summary>
         /// <param name="id">The unique ID of the friendship.</param>
         /// <returns>An asynchronous task representing the deletion operation.</returns>
-        public async Task<bool> DeleteFriendsCoupleByIdAsync(int id)
+        public async Task<bool> DeleteFriendsCoupleByIdAsync(int? id)
         {
             var friendCouple = await _repository.GetByIdAsync<FriendsCouple>(id);
             if (friendCouple != null)
@@ -188,14 +197,14 @@ namespace muZilla.Application.Services
         /// <param name="userId">The ID of the first user.</param>
         /// <param name="friendId">The ID of the second user.</param>
         /// <returns>The ID of the friendship, or 0 if not found.</returns>
-        public async Task<int> GetFriendsCoupleIdWithIds(int userId, int friendId)
+        public async Task<int?> GetFriendsCoupleIdWithIds(int? userId, int friendId)
         {
             var friendCouple = await _repository.GetAllAsync<FriendsCouple>().Result
                 .FirstOrDefaultAsync(a =>
                     (a.UserId == userId && a.FriendId == friendId) ||
                     (a.UserId == friendId && a.FriendId == userId));
 
-            return friendCouple?.Id ?? 0;
+            return friendCouple == null ? null : friendCouple.Id;
         }
 
         /// <summary>

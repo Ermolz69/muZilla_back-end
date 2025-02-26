@@ -1,7 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 
 using System.Net.Mail;
 using System.Net;
+
 
 using muZilla.Entities.Models;
 using muZilla.Entities.Enums;
@@ -10,6 +13,8 @@ using muZilla.Application.DTOs;
 using muZilla.Application.DTOs.User;
 using muZilla.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
+using System.Security.Claims;
+using System.Text;
 
 namespace muZilla.Application.Services
 {
@@ -82,7 +87,7 @@ namespace muZilla.Application.Services
                     ProfilePicture = (await _repository.GetByIdAsync<Image>(registerDTO.UserDTO.UserPublicData.ProfilePictureId))!
                 };
 
-                await _repository.AddAsync<User>(user);
+                user = await _repository.AddAsync<User>(user);
                 await _repository.SaveChangesAsync();
 
                 int collectionId = await _collectionService.CreateCollectionAsync(new CollectionDTO()
@@ -92,7 +97,7 @@ namespace muZilla.Application.Services
                     ViewingAccess = 0,
                     IsBanned = false,
                     IsFavorite = true,
-                    AuthorId = await GetIdByLoginAsync(user.Login),
+                    AuthorId = user.Id,
                     CoverId = null,
                     SongIds = new List<int>()
                 });
@@ -238,10 +243,10 @@ namespace muZilla.Application.Services
         /// This method attempts to find a user with the specified login and returns their ID. 
         /// If the user is not found or an exception occurs, it returns <c>-1</c>.
         /// </remarks>
-        public async Task<int> GetIdByLoginAsync(string login)
+        public async Task<int?> GetIdByLoginAsync(string? login)
         {
            var user = await GetUserByLoginAsync(login);
-           return user == null ? -1 : user.Id;
+           return user == null ? null : user.Id;
         }
 
         /// <summary>
@@ -251,11 +256,41 @@ namespace muZilla.Application.Services
         /// <returns>
         /// The user object if found, including their access level, or null if no matching user is found.
         /// </returns>
-        public async Task<User?> GetUserByLoginAsync(string login)
+        public async Task<User?> GetUserByLoginAsync(string? login)
         {
             return await _repository.GetAllAsync<User>().Result
                 .Include(u => u.AccessLevel)
                 .FirstOrDefaultAsync(u => u.Login == login);
+        }
+
+        /// <summary>
+        /// Generates a JWT token for a given username.
+        /// </summary>
+        /// <param name="login">The username to generate the token for.</param>
+        /// <returns>The generated JWT token.</returns>
+        public string GenerateJwtToken(string login)
+        {
+            var issuer = _config["Jwt:Issuer"];
+            var audience = _config["Jwt:Audience"];
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Name, login),
+                new Claim("role", "User"),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: issuer,
+                audience: audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(1),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         /// <summary>

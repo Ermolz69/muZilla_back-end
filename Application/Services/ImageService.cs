@@ -3,8 +3,6 @@ using muZilla.Application.DTOs;
 using muZilla.Application.Interfaces;
 using muZilla.Entities.Models;
 
-
-
 namespace muZilla.Application.Services
 {
 
@@ -26,12 +24,14 @@ namespace muZilla.Application.Services
         /// <returns>An asynchronous task representing the operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the image file cannot be read.</exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
-        public async Task CreateImageAsync(ImageDTO imageDTO)
+        public async Task<int> CreateImageAsync(ImageDTO imageDTO)
         {
+            int imageId;
+
             if (imageDTO.DomainColor == null)
             {
-                string[] st = imageDTO.ImageFilePath.Split('/');
-                var imageBytes = (await _fileStorageService.ReadFileFromSongAsync(st[0], int.Parse(st[1]), st[2], null))!;
+                string[] separetedFilePath = imageDTO.ImageFilePath.Split('/');
+                var imageBytes = (await _fileStorageService.ReadFileFromSongAsync(separetedFilePath[0], int.Parse(separetedFilePath[1]), separetedFilePath[2], null))!;
 
                 using var memoryStream = new MemoryStream(imageBytes);
 
@@ -42,10 +42,10 @@ namespace muZilla.Application.Services
                 var _image = new Entities.Models.Image()
                 {
                     ImageFilePath = imageDTO.ImageFilePath,
-                    DomainColor = imageDTO.DomainColor != null ? imageDTO.DomainColor : $"{color.R},{color.G},{color.B}"
+                    DomainColor = imageDTO.DomainColor != null ? imageDTO.DomainColor : color.ToString(),
                 };
 
-                await _repository.AddAsync<Entities.Models.Image>(_image);
+                imageId = (await _repository.AddAsync<Entities.Models.Image>(_image)).Id;
                 await _repository.SaveChangesAsync();
             }
             else
@@ -56,9 +56,10 @@ namespace muZilla.Application.Services
                     DomainColor = imageDTO.DomainColor
                 };
 
-                await _repository.AddAsync<Entities.Models.Image>(_image);
+                imageId = (await _repository.AddAsync<Entities.Models.Image>(_image)).Id;
                 await _repository.SaveChangesAsync();
             }
+            return imageId;
         }
 
 

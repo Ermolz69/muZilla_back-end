@@ -1,18 +1,20 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Entities.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 using muZilla.Application.Services;
+using muZilla.Entities.Models;
+using System.Security.Claims;
 
 namespace muZilla.Controllers
 {
     [ApiController]
     [Route("api/friendscouple")]
-    [Authorize]
     public class FriendsCoupleController : ControllerBase
     {
         private readonly FriendsCoupleService _friendsCoupleService;
         private readonly BlockedUserService _blockedUserService;
-
+        private readonly UserService _userService;
         public FriendsCoupleController(FriendsCoupleService friendsCoupleService, BlockedUserService blockedUserService)
         {
             _friendsCoupleService = friendsCoupleService;
@@ -26,78 +28,109 @@ namespace muZilla.Controllers
         /// <param name="receiver">The ID of the user receiving the request.</param>
         /// <returns>A 200 OK response if successful, or a 400 Bad Request if blocked or an error occurs.</returns>
         [HttpPost("createrequest")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateRequestAsync(int requester, int receiver)
+        public async Task<IActionResult> CreateRequestAsync(int receiver)
         {
-            if (_blockedUserService.CheckBlockedUser(receiver, requester))
-                return BadRequest("That user blocked your ass.");
-            try
+            int? requester = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
+            if (requester == null)
             {
-                await _friendsCoupleService.CreateRequestFriendsCoupleAsync(requester, receiver);
-                return Ok();
+                return Unauthorized();
             }
-            catch (Exception e)
+
+            if (_blockedUserService.CheckBlockedUser(receiver, requester.Value))
+                return BadRequest("You can't send a request to this user");
             {
-                return BadRequest(e.Message);
+                FriendCoupleResultType result = await _friendsCoupleService.CreateRequestFriendsCoupleAsync(requester.Value, receiver);
+                if (result != FriendCoupleResultType.Success)
+                { 
+                    return BadRequest($"Failed to create request. Error: {result.ToString()}");
+                }
+                return Ok();
             }
         }
 
         /// <summary>
         /// Retrieves all active friend requests for a user.
         /// </summary>
-        /// <param name="id">The ID of the user.</param>
         /// <returns>A list of IDs representing active friend requests.</returns>
-        [HttpGet("getallactive/{id}")]
+        [HttpGet("getallactive")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<List<int>> GetAllActiveForIdAsync(int id)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetAllActiveForIdAsync()
         {
-            return await _friendsCoupleService.GetAllActiveRequestsForIdAsync(id);
+            int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+            return Ok(await _friendsCoupleService.GetAllActiveRequestsForIdAsync(userId.Value));
         }
 
         /// <summary>
         /// Accepts a friend request between two users.
         /// </summary>
-        /// <param name="id">The ID of the user accepting the request.</param>
         /// <param name="friendId">The ID of the user who sent the request.</param>
         /// <returns>A 200 OK response if successful, or a 400 Bad Request if an error occurs.</returns>
         [HttpPost("accept")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> AcceptFriendsCoupleWithIds(int id, int friendId)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> AcceptFriendsCoupleWithIds(int friendId)
         {
-            bool exec = await _friendsCoupleService.AcceptFriendsCouple(id, friendId);
-            if (!exec) BadRequest("It may appear that friend of user does not exist.");
+            int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+            bool result = await _friendsCoupleService.AcceptFriendsCouple(userId.Value, friendId);
+            if (!result) NotFound("It may appear that friend of user does not exist.");
             return Ok();
         }
 
         /// <summary>
         /// Denies a friend request between two users.
         /// </summary>
-        /// <param name="id">The ID of the user denying the request.</param>
-        /// <param name="friendId">The ID of the user who sent the request.</param>
+        /// <param name="requesterId">The ID of the user who sent the request.</param>
         /// <returns>A 200 OK response if successful, or a 400 Bad Request if an error occurs.</returns>
         [HttpPost("deny")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> DenyFriendsCoupleWithIds(int id, int friendId)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DenyFriendsCoupleWithIds(int requesterId)
         {
-            bool exec = await _friendsCoupleService.DenyFriendsCouple(id, friendId);
-            if (!exec) BadRequest("It may appear that friend of user does not exist.");
+            int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+            bool result = await _friendsCoupleService.DenyFriendsCouple(userId.Value, requesterId);
+            if (!result) NotFound("It may appear that friend of user does not exist.");
             return Ok();
         }
 
         /// <summary>
         /// Checks if two users are friends.
         /// </summary>
-        /// <param name="id">The ID of the first user.</param>
         /// <param name="friendId">The ID of the second user.</param>
         /// <returns>True if the users are friends; otherwise, false.</returns>
         [HttpGet("check")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<bool> CheckFriendsCoupleWithIds(int id, int friendId)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CheckFriendsCoupleWithIds(int friendId)
         {
-            return await _friendsCoupleService.CheckFriendsCouple(id, friendId);
+            int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+            return Ok(await _friendsCoupleService.CheckFriendsCouple(userId.Value, friendId));
         }
 
         /// <summary>
@@ -105,10 +138,23 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="id">The ID of the friendship to delete.</param>
         /// <returns>A 200 OK response upon successful deletion.</returns>
-        [HttpDelete("delete/{id}")]
+        [HttpDelete("delete")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteFriendsCoupleById(int id)
         {
+            int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+            FriendsCouple? friendsCouple = await _friendsCoupleService.GetFriendCoupleByIdAsync(id);
+            if(friendsCouple == null)
+                return NotFound();
+            if (friendsCouple.UserId != userId && friendsCouple.FriendId != userId)
+                return NotFound();
             await _friendsCoupleService.DeleteFriendsCoupleByIdAsync(id);
             return Ok();
         }
@@ -119,11 +165,18 @@ namespace muZilla.Controllers
         /// <param name="id">The ID of the first user.</param>
         /// <param name="friendId">The ID of the second user.</param>
         /// <returns>The ID of the friendship.</returns>
-        [HttpGet("getid")]
+        [HttpGet("getfriendcoupleid")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<int> GetIdWithIds(int id, int friendId)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetIdWithIds(int friendId)
         {
-            return await _friendsCoupleService.GetFriendsCoupleIdWithIds(id, friendId);
+            int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+            return Ok(await _friendsCoupleService.GetFriendsCoupleIdWithIds(userId.Value, friendId));
         }
 
         /// <summary>
@@ -133,9 +186,13 @@ namespace muZilla.Controllers
         /// <returns>A list of IDs representing the user's friends.</returns>
         [HttpGet("friendslist")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<List<int>> FriendsListById(int id)
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> FriendsListById(int userId)
         {
-            return await _friendsCoupleService.GetFriendsById(id);
+            List<int> friendsIds = await _friendsCoupleService.GetFriendsById(userId);
+            if (friendsIds == null)
+                return NotFound();
+            return Ok(friendsIds);
         }
 
         /// <summary>
@@ -144,30 +201,44 @@ namespace muZilla.Controllers
         /// <param name="userId">The ID of the user creating the invite link.</param>
         /// <returns>A 200 OK response upon successful creation.</returns>
         [HttpPost("createinvitelink")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreateInviteLink(int userId)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> CreateInviteLink()
         {
-            await _friendsCoupleService.CreateInviteLink(userId);
+            int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+            await _friendsCoupleService.CreateInviteLink(userId.Value);
             return Ok();
         }
 
         /// <summary>
         /// Accepts a friend request via an invite link.
         /// </summary>
-        /// <param name="userId">The ID of the user accepting the invite.</param>
         /// <param name="link">The invite link.</param>
         /// <returns>A 200 OK response upon successful acceptance, or a 400 Bad Request if the link is invalid.</returns>
-        [HttpGet("gotolink")]
+        [HttpGet("addfriendbylink/{link}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> GoToLink(int userId, string link)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GoToLink(string link)
         {
-            int? id = await _friendsCoupleService.GetUserIdByLinkValueAsync(link);
-            if (id != null)
+            int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
+            if (userId == null)
             {
-                int req_id = id.Value;
-                await _friendsCoupleService.DeleteLinkByUserIdAsync(req_id);
-                await _friendsCoupleService.CreateFriendsCouple(req_id, userId);
+                return Unauthorized();
+            }
+
+            int? friendsCoupleId = await _friendsCoupleService.GetUserIdByLinkValueAsync(link);
+            if (friendsCoupleId != null)
+            {
+                int request_id = friendsCoupleId.Value;
+                await _friendsCoupleService.DeleteLinkByUserIdAsync(request_id);
+                await _friendsCoupleService.CreateFriendsCouple(request_id, userId.Value);
                 return Ok();
             }
             return BadRequest();

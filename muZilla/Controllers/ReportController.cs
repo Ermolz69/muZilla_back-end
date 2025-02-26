@@ -9,7 +9,6 @@ namespace muZilla.Controllers
 {
     [ApiController]
     [Route("api/report")]
-    [Authorize]
     public class ReportController : ControllerBase
     {
         private readonly ReportService _reportService;

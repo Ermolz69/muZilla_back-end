@@ -207,8 +207,8 @@ namespace muZilla.Controllers
                     await _songService.UpdateCoverIdOnly(id, _imageService.GetNewestAsync());
 
                     Console.WriteLine("Created!");
-                }
-            }
+                } 
+            } // ник автора/id песни/ лимриксы mp3 и cover 
             else
             {
                 var rootPath = Directory.GetCurrentDirectory();

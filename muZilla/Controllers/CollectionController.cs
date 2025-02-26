@@ -10,7 +10,6 @@ namespace muZilla.Controllers
 {
     [ApiController]
     [Route("api/collection")]
-    [Authorize]
     public class CollectionController : ControllerBase
     {
         private readonly CollectionService _collectionService;
@@ -42,12 +41,12 @@ namespace muZilla.Controllers
                 return BadRequest(ModelState);
 
             var Login = User.FindFirst(ClaimTypes.Name)?.Value;
-            var Id = Login == null ? -1 : await _userService.GetIdByLoginAsync(Login);
+            var Id = Login == null ? null : await _userService.GetIdByLoginAsync(Login);
 
-            if (Id == -1)
+            if (Id == null)
                 return Unauthorized();
 
-            collectionDTO.AuthorId = Id;
+            collectionDTO.AuthorId = Id.Value;
 
             return Ok(await _collectionService.CreateCollectionAsync(collectionDTO));
         }
@@ -147,9 +146,11 @@ namespace muZilla.Controllers
         public async Task<IActionResult> LikeCollection(int collectionId)
         {
             var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
-            var userId = userLogin == null ? -1 : await _userService.GetIdByLoginAsync(userLogin);
+            var userId = userLogin == null ? null : await _userService.GetIdByLoginAsync(userLogin);
+            if (userId == null)
+                return Unauthorized();
 
-            await _collectionService.ToggleLikeCollectionAsync(userId, collectionId);
+            await _collectionService.ToggleLikeCollectionAsync(userId.Value, collectionId);
             return Ok();
         }
     }

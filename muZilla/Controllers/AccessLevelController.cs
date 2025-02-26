@@ -10,7 +10,6 @@ namespace muZilla.Controllers
 {
     [ApiController]
     [Route("api/accesslevel")]
-    [Authorize]
     public class AccessLevelController : ControllerBase
     {
         private readonly AccessLevelService _accessLevelService;

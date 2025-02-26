@@ -59,7 +59,7 @@ namespace muZilla.Controllers
                 return BadRequest("Invalid ban request data.");
             }
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
-            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
+            int? adminId = adminLogin == null ? null : await _userService.GetIdByLoginAsync(adminLogin);
 
             BanResultType result = await _banService.BanUserAsync(
                 banRequest.IdToBan,
@@ -88,7 +88,7 @@ namespace muZilla.Controllers
         public async Task<IActionResult> UnbanUser(int userId)
         {
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
-            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
+            var adminId = adminLogin == null ? null : await _userService.GetIdByLoginAsync(adminLogin);
 
             BanResultType result = await _banService.UnbanUserAsync(userId, adminId);
 
@@ -141,7 +141,7 @@ namespace muZilla.Controllers
             }
 
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
-            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
+            var adminId = adminLogin == null ? null : await _userService.GetIdByLoginAsync(adminLogin);
 
             BanResultType result = await _banService.BanSongAsync(
                 banRequest.IdToBan,
@@ -170,7 +170,7 @@ namespace muZilla.Controllers
         public async Task<IActionResult> UnbanSong(int songId)
         {
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
-            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
+            var adminId = adminLogin == null ? null : await _userService.GetIdByLoginAsync(adminLogin);
 
             BanResultType result = await _banService.UnbanSongAsync(songId, adminId);
 
@@ -223,7 +223,7 @@ namespace muZilla.Controllers
             }
 
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
-            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
+            var adminId = adminLogin == null ? null : await _userService.GetIdByLoginAsync(adminLogin);
 
             BanResultType result = await _banService.BanCollectionAsync(
                 banRequest.IdToBan,
@@ -252,7 +252,7 @@ namespace muZilla.Controllers
         public async Task<IActionResult> UnbanCollection(int collectionId)
         {
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
-            var adminId = adminLogin == null ? -1 : await _userService.GetIdByLoginAsync(adminLogin);
+            var adminId = adminLogin == null ? null : await _userService.GetIdByLoginAsync(adminLogin);
 
             BanResultType result = await _banService.UnbanCollectionAsync(collectionId, adminId);
 

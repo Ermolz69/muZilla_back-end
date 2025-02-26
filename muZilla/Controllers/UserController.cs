@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization;
 
 using System.Text;
+using System.Drawing;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 
@@ -35,26 +36,6 @@ namespace muZilla.Controllers
         }
 
         /// <summary>
-        /// Creates a new user.
-        /// </summary>
-        /// <param name="userDTO">The data transfer object containing user details.</param>
-        /// <returns>A 200 OK response upon successful creation, or a 400 Bad Request if the input is invalid.</returns>
-        [HttpPost("create")]
-        [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateUser(RegisterDTO registerDTO)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            await _userService.CreateUserAsync(registerDTO);
-            return Ok();
-        }
-
-        /// <summary>
         /// Retrieves a user by their unique identifier.
         /// </summary>
         /// <param name="id">The unique identifier of the user.</param>
@@ -73,18 +54,22 @@ namespace muZilla.Controllers
         /// <param name="id">The unique identifier of the user to update.</param>
         /// <param name="userDTO">The updated user data.</param>
         /// <returns>A 200 OK response upon successful update, or a 400 Bad Request if the input is invalid.</returns>
-        [HttpPatch("update/{id}")]
+        [HttpPatch("update")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdateUserByIdAsync(int id, RegisterDTO registerDTO)
+        public async Task<IActionResult> UpdateUserByIdAsync(RegisterDTO registerDTO)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-
-            await _userService.UpdateUserByIdAsync(id, registerDTO);
+            int? id = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
+            if (id == null)
+            {
+                return Unauthorized();
+            }
+            await _userService.UpdateUserByIdAsync(id.Value, registerDTO);
             return Ok();
         }
 
@@ -105,8 +90,12 @@ namespace muZilla.Controllers
                 return Unauthorized("Invalid or missing token.");
             }
 
-            int id = await _userService.GetIdByLoginAsync(userLogin);
-            await _userService.DeleteUserByIdAsync(id);
+            int? id = await _userService.GetIdByLoginAsync(userLogin);
+            if (id == null)
+            {
+                return Unauthorized();
+            }
+            await _userService.DeleteUserByIdAsync(id.Value);
             return Ok();
         }
 
@@ -147,8 +136,15 @@ namespace muZilla.Controllers
             }
 
             await _fileStorageService.CreateFileInDirectoryAsync(request.registerDTO.LoginDTO.Login, "pic.jpg", fileBytes);
-            await _imageService.CreateImageAsync(new ImageDTO() { ImageFilePath = request.registerDTO.LoginDTO.Login + "/pic.jpg", DomainColor = "69,139,69" });
 
+            using (var stream = request.profile.OpenReadStream())
+            {
+                Bitmap image = new Bitmap(stream);
+                await _imageService.CreateImageAsync(new ImageDTO() { 
+                    ImageFilePath = request.registerDTO.LoginDTO.Login + "/pic.jpg", 
+                    DomainColor = (FileStorageService.GetDominantColor(image)).ToString() 
+                });
+            }
             request.registerDTO.UserDTO.UserPublicData.AccessLevelId = access_id;
             request.registerDTO.UserDTO.UserPublicData.ProfilePictureId = _imageService.GetNewestAsync();
 
@@ -172,9 +168,14 @@ namespace muZilla.Controllers
         public IActionResult Login(LoginDTO loginDTO)
         {
             LoginResultType res = _userService.CanLogin(loginDTO);
-            if (res == LoginResultType.Banned) return BadRequest("Something went wrong.");
-            if (res == LoginResultType.NotFound || res == LoginResultType.IncorrectData) return BadRequest($"Incorrect login or incorrect password. Access denied. Code: {res.ToString()}");
-            var token = GenerateJwtToken(loginDTO.Login);
+            if (res == LoginResultType.Banned) 
+                return BadRequest("Something went wrong.");
+
+            if (res == LoginResultType.NotFound || res == LoginResultType.IncorrectData) 
+                return BadRequest($"Incorrect login or incorrect password. Access denied. Code: {res.ToString()}");
+
+            var token = _userService.GenerateJwtToken(loginDTO.Login);
+
             return Ok(new { token });
         }
 
@@ -183,41 +184,17 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="login">The user's login.</param>
         /// <returns>The user ID.</returns>
-        [HttpGet("loginid")]
+        [HttpGet("getidbylogin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public int GetIdByLogin(string login)
+        public async Task<IActionResult> GetIdByLogin(string login)
         {
-            return _userService.GetIdByLoginAsync(login).Result;
-        }
-
-        /// <summary>
-        /// Generates a JWT token for a given username.
-        /// </summary>
-        /// <param name="username">The username to generate the token for.</param>
-        /// <returns>The generated JWT token.</returns>
-        private string GenerateJwtToken(string username)
-        {
-            var issuer = _config["Jwt:Issuer"];
-            var audience = _config["Jwt:Audience"];
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
+            int? id = await _userService.GetIdByLoginAsync(login);
+            if (id == null)
             {
-                new Claim(ClaimTypes.Name, username),
-                new Claim("role", "User"),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+                return Unauthorized();
+            }
+            return Ok(id.Value);
 
-            var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
-                claims: claims,
-                expires: DateTime.Now.AddHours(1),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

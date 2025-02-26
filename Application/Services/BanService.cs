@@ -38,7 +38,7 @@ namespace muZilla.Application.Services
         /// <returns>
         /// An asynchronous task that returns <c>true</c> if the user was successfully banned; otherwise, <c>false</c>.
         /// </returns>
-        public async Task<BanResultType> BanUserAsync(int idToBan, int idOfAdmin, string reason, DateTime banUntilUtc)
+        public async Task<BanResultType> BanUserAsync(int idToBan, int? idOfAdmin, string reason, DateTime banUntilUtc)
         {
             if (idToBan == idOfAdmin)
                 return BanResultType.UsersAreSame;
@@ -55,7 +55,7 @@ namespace muZilla.Application.Services
             if (canBan == BanResultType.Success) {
                 var ban = new Ban
                 {
-                    BannedByUserId = idOfAdmin,
+                    BannedByUserId = idOfAdmin!.Value,
                     BannedUserId = idToBan,
                     BanType = 1,
                     Reason = reason,
@@ -79,7 +79,7 @@ namespace muZilla.Application.Services
         /// <returns>
         /// A task representing the asynchronous operation. The result is <c>true</c> if the user was successfully unbanned; otherwise, <c>false</c>.
         /// </returns>
-        public async Task<BanResultType> UnbanUserAsync(int userId, int adminId)
+        public async Task<BanResultType> UnbanUserAsync(int userId, int? adminId)
         {
             var admin = await _repository.GetAllAsync<User>().Result
                 .Include(u => u.AccessLevel)
@@ -118,7 +118,7 @@ namespace muZilla.Application.Services
         /// <param name="reason">The reason for banning the song.</param>
         /// <param name="banUntilUtc">The date and time until which the song is banned.</param>
         /// <returns><c>true</c> if the song was successfully banned, otherwise <c>false</c>.</returns>
-        public async Task<BanResultType> BanSongAsync(int songId, int adminId, string reason, DateTime banUntilUtc)
+        public async Task<BanResultType> BanSongAsync(int songId, int? adminId, string reason, DateTime banUntilUtc)
         {
             var admin = await _repository.GetAllAsync<User>().Result
                 .Include(u => u.AccessLevel)
@@ -136,7 +136,7 @@ namespace muZilla.Application.Services
             {
                 var ban = new Ban
                 {
-                    BannedByUserId = adminId,
+                    BannedByUserId = adminId!.Value,
                     BannedSongId = songId,
                     BanType = 2,
                     Reason = reason,
@@ -158,7 +158,7 @@ namespace muZilla.Application.Services
         /// <param name="songId">The ID of the song to unban.</param>
         /// <param name="adminId">The ID of the admin attempting to unban the song.</param>
         /// <returns><c>true</c> if the song was successfully unbanned, otherwise <c>false</c>.</returns>
-        public async Task<BanResultType> UnbanSongAsync(int songId, int adminId)
+        public async Task<BanResultType> UnbanSongAsync(int songId, int? adminId)
         {
             var admin = await _repository.GetAllAsync<User>().Result
                 .Include(u => u.AccessLevel)
@@ -200,7 +200,7 @@ namespace muZilla.Application.Services
         /// <param name="reason">The reason for banning the collection.</param>
         /// <param name="banUntilUtc">The date and time until which the collection is banned.</param>
         /// <returns><c>true</c> if the collection was successfully banned, otherwise <c>false</c>.</returns>
-        public async Task<BanResultType> BanCollectionAsync(int collectionId, int adminId, string reason, DateTime banUntilUtc)
+        public async Task<BanResultType> BanCollectionAsync(int collectionId, int? adminId, string reason, DateTime banUntilUtc)
         {
             var admin = await _repository.GetAllAsync<User>().Result
                 .Include(u => u.AccessLevel)
@@ -218,7 +218,7 @@ namespace muZilla.Application.Services
             {
                 var ban = new Ban
                 {
-                    BannedByUserId = adminId,
+                    BannedByUserId = adminId!.Value,
                     BannedCollectionId = collectionId,
                     BanType = 3,
                     Reason = reason,
@@ -239,7 +239,7 @@ namespace muZilla.Application.Services
         /// <param name="collectionId">The ID of the collection to unban.</param>
         /// <param name="adminId">The ID of the admin attempting to unban the collection.</param>
         /// <returns><c>true</c> if the collection was successfully unbanned, otherwise <c>false</c>.</returns>
-        public async Task<BanResultType> UnbanCollectionAsync(int collectionId, int adminId)
+        public async Task<BanResultType> UnbanCollectionAsync(int collectionId, int? adminId)
         {
             var admin = await _repository.GetAllAsync<User>().Result
                 .Include(u => u.AccessLevel)

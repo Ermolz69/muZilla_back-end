@@ -11,7 +11,6 @@ namespace muZilla.Controllers
 {
     [ApiController]
     [Route("api/chat")]
-    [Authorize]
     public class ChatController : ControllerBase
     {
         private readonly ChatService _chatService;
@@ -44,7 +43,7 @@ namespace muZilla.Controllers
                 return BadRequest(ModelState);
             }
 
-            int senderId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
+            int? senderId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
 
             if (senderId == null)
             {
