@@ -143,26 +143,28 @@ namespace muZilla.Application.Services
         /// </summary>
         /// <param name="userId">The ID of the user performing the toggle operation.</param>
         /// <param name="collectionId">The ID of the collection to toggle the like status for.</param>
-        /// <returns>An asynchronous task representing the toggle operation.</returns>
-        public async Task ToggleLikeCollectionAsync(int userId, int collectionId)
+        /// <returns>An asynchronous task representing the toggle operation result.</returns>
+        public async Task<bool> ToggleLikeCollectionAsync(int userId, int collectionId)
         {
             var user = await _repository.GetAllAsync<User>().Result
                 .Include(u => u.LikedCollections)
                 .FirstOrDefaultAsync(u => u.Id == userId);
             var collection = await _repository.GetByIdAsync<Collection>(collectionId);
-            if (user == null || collection == null) return;
+            if (user == null || collection == null) return false;
 
             if (!user.LikedCollections.Contains(collection))
             {
                 user.LikedCollections.Add(collection);
                 collection.Likes++;
                 await _repository.SaveChangesAsync();
+                return true;
             }
             else
             {
                 user.LikedCollections.Remove(collection);
                 collection.Likes--;
                 await _repository.SaveChangesAsync();
+                return true;
             }
         }
     }

@@ -35,7 +35,7 @@ namespace muZilla.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateAccessLevel(AccessLevelDTO accessLevelDTO)
+        public async Task<IActionResult> CreateAccessLevel([FromBody] AccessLevelDTO accessLevelDTO)
         {
             if (!ModelState.IsValid)
             {
@@ -57,10 +57,10 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="id">The unique identifier of the access level.</param>
         /// <returns>The access level details if found, or null if not.</returns>
-        [HttpGet("{id}")]
+        [HttpGet("get/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<AccessLevel?> GetAccessLevel(int id)
+        public async Task<AccessLevel?> GetAccessLevel([FromRoute] int id)
         {
             return await _accessLevelService.GetAccessLevelById(id);
         }
@@ -78,8 +78,8 @@ namespace muZilla.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UpdateAccessLevelById(int id, AccessLevelDTO accessLevelDTO)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> UpdateAccessLevelById([FromRoute] int id,[FromBody] AccessLevelDTO accessLevelDTO)
         {
             if (!ModelState.IsValid)
             {
@@ -105,8 +105,8 @@ namespace muZilla.Controllers
         [HttpDelete("delete/{id}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteAccessLevelById(int id)
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> DeleteAccessLevelById([FromRoute] int id)
         {
             // test method
             if (!_config.GetSection("Owners").Get<string[]>()!.Contains(User.FindFirst(ClaimTypes.Name)?.Value))
@@ -117,7 +117,7 @@ namespace muZilla.Controllers
             if (await _accessLevelService.DeleteAccessLevelByIdAsync(id))
                 return Ok();
 
-            return BadRequest();
+            return Forbid();
         }
 
         /// <summary>
@@ -126,7 +126,6 @@ namespace muZilla.Controllers
         /// <returns>The unique identifier of the newly created default access level.</returns>
         [HttpGet("default")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> CreateDefaultAsync()
         {
             // test method

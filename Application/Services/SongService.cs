@@ -114,6 +114,7 @@ namespace muZilla.Application.Services
         {
             var song = await _repository.GetAllAsync<Song>().Result
                 .Include(s => s.Remixes)
+                .Include(s => s.Authors)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (song == null)

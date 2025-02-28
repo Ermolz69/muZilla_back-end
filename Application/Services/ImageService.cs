@@ -32,7 +32,7 @@ namespace muZilla.Application.Services
             {
                 string[] separetedFilePath = imageDTO.ImageFilePath.Split('/');
 
-                var imageBytes = (await _fileStorageService.ReadFileFromSongAsync(separetedFilePath[0], int.Parse(separetedFilePath[1]), separetedFilePath[2], null))!;
+                var imageBytes = (await _fileStorageService.ReadFileFromSongAsync(separetedFilePath[0], int.Parse(separetedFilePath[1]), imageDTO.FileType, null))!;
 
                 using var memoryStream = new MemoryStream(imageBytes);
 

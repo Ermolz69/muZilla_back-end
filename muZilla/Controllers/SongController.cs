@@ -109,6 +109,10 @@ namespace muZilla.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> PublishSong([FromForm] PublishSongRequest request)
         {
+            if(!ModelState.IsValid) {
+                return BadRequest(ModelState);
+            }
+
             var login = User.FindFirst(ClaimTypes.Name)?.Value;
 
             if (login == null)

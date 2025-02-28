@@ -3,6 +3,7 @@ using Azure;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
 using Microsoft.Extensions.Configuration;
+using muZilla.Entities.Enums;
 using muZilla.Entities.Models;
 
 namespace muZilla.Application.Services
@@ -112,15 +113,33 @@ namespace muZilla.Application.Services
         /// </summary>
         /// <param name="login">The login of the user whose song directory the file is being read from.</param>
         /// <param name="songId">The ID of the song whose directory contains the file.</param>
-        /// <param name="filename">The name of the file to read.</param>
+        /// <param name="fileType">The name of the file to read.</param>
         /// <param name="ac">The access level of the user for validation purposes.</param>
         /// <returns>The file content as a byte array, or null if the file cannot be read.</returns>
         /// <exception cref="Exception">Thrown if the user lacks permissions to download .mp3 files.</exception>
-        public async Task<byte[]?> ReadFileFromSongAsync(string login, int songId, string filename, AccessLevel? ac)
+        public async Task<byte[]?> ReadFileFromSongAsync(string login, int songId, SongFile fileType, AccessLevel? ac)
         {
             ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(login);
 
             ShareDirectoryClient subdirClient = directoryClient.GetSubdirectoryClient(songId.ToString());
+
+            string filename;
+            switch (fileType)
+            {
+                case SongFile.Song:
+                    filename = "song.mp3";
+                    break;
+                case SongFile.Cover:
+                    filename = "";
+                    break;
+                case SongFile.Lyrics:
+                    filename = "";
+                    break;
+                default:
+                    filename = "song.mp3"; 
+                    break;
+            }
+
 
             ShareFileClient fileClient = subdirClient.GetFileClient(filename);
 

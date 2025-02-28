@@ -29,6 +29,7 @@ namespace muZilla.Controllers
         /// or a 401 Unauthorized response if the user is not authenticated.
         /// </returns>
         [HttpPost("create")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -58,10 +59,24 @@ namespace muZilla.Controllers
         /// or a 404 Not Found response if the report does not exist.
         /// </returns>
         [HttpGet("{id}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<Report>> GetReportById(int id)
         {
+            var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+          
+            User? admin = await _userService.GetUserByLoginAsync(adminLogin);
+            if (admin == null)
+            {
+                return NotFound();
+            }
+            if (admin.AccessLevel.CanManageReports)
+            {
+                return Forbid();
+            }
+
             var report = await _reportService.GetReportByIdAsync(id);
             if (report == null)
             {

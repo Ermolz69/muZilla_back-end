@@ -4,6 +4,7 @@ using muZilla.Entities.Models;
 using muZilla.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using muZilla.Entities.Enums;
 
 namespace muZilla.Controllers
 {
@@ -13,17 +14,20 @@ namespace muZilla.Controllers
     {
         private readonly FileStorageService _fileStorageService;
         private readonly UserService _userService;
+        private readonly SongService _songService;
+        private readonly IConfiguration _config;
 
-        public FileStorageController(FileStorageService fileStorageService, UserService userService)
+        public FileStorageController(FileStorageService fileStorageService, UserService userService, SongService songService, IConfiguration config)
         {
             _fileStorageService = fileStorageService;
             _userService = userService;
+            _songService = songService;
+            _config = config;
         }
 
         /// <summary>
         /// Uploads a file to a user's directory.
         /// </summary>
-        /// <param name="login">The login of the user.</param>
         /// <param name="file">The file to be uploaded.</param>
         /// <returns>A response indicating the success or failure of the upload.</returns>
         [HttpPost("upload")]
@@ -33,16 +37,22 @@ namespace muZilla.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UploadFile(IFormFile file)
         {
+
             var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             if(userLogin == null)
                 return Unauthorized();
+            // test method
+            if (!_config.GetSection("Owners").Get<string[]>()!.Contains(User.FindFirst(ClaimTypes.Name)?.Value))
+            {
+                return BadRequest();
+            }
+
             try
             {
                 if (file == null || file.Length == 0)
                 {
                     return BadRequest("Invalid file upload.");
                 }
-
                 using var memoryStream = new MemoryStream();
                 await file.CopyToAsync(memoryStream);
                 byte[] fileBytes = memoryStream.ToArray();
@@ -55,25 +65,38 @@ namespace muZilla.Controllers
             {
                 return BadRequest(ex.Message);
             }
-            catch (Exception ex)
+            catch
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error");
             }
         }
 
         /// <summary>
         /// Uploads a file to a song-specific directory.
         /// </summary>
-        /// <param name="login">The login of the user.</param>
         /// <param name="songId">The ID of the song.</param>
         /// <param name="file">The file to be uploaded.</param>
         /// <returns>A response indicating the success or failure of the upload.</returns>
-        [HttpPost("uploadforsong")]
+        [HttpPost("uploadToSongFile")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UploadToSongFile(string login, int songId, IFormFile file)
+        public async Task<IActionResult> UploadToSongFile(int songId, IFormFile file)
         {
+            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (userLogin == null)
+                return Unauthorized();
+
+            Song? song = await _songService.GetSongByIdAsync(songId);
+            if (song == null) {
+                return BadRequest();
+            };
+
+            if(song.Authors.ToList()[0].Login != userLogin) {
+                return Forbid();
+            };
 
             try
             {
@@ -86,7 +109,7 @@ namespace muZilla.Controllers
                 await file.CopyToAsync(memoryStream);
                 byte[] fileBytes = memoryStream.ToArray();
 
-                await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(login, songId, file.FileName, fileBytes);
+                await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(userLogin, songId, file.FileName, fileBytes);
 
                 return Ok("File uploaded successfully.");
             }
@@ -100,20 +123,24 @@ namespace muZilla.Controllers
             }
         }
 
+        //todo
         /// <summary>
         /// Downloads a file from a user's directory.
         /// </summary>
-        /// <param name="login">The login of the user.</param>
-        /// <param name="filename">The name of the file to download.</param>
-        /// <returns>The file as a downloadable stream.</returns>
+        /// <param name="filename">The name of the file to download</param>
+        /// <returns>The file as a downloadable stream</returns>
         [HttpGet("download")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> DownloadFile(string login, string filename)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> DownloadFile(string filename)
         {
+            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (userLogin == null)
+                return Unauthorized();
             try
             {
-                byte[] fileBytes = await _fileStorageService.ReadFileAsync(login, filename);
+                byte[] fileBytes = await _fileStorageService.ReadFileAsync(userLogin, filename);
 
                 return File(fileBytes, "application/octet-stream", filename);
             }
@@ -126,23 +153,27 @@ namespace muZilla.Controllers
         /// <summary>
         /// Downloads a file from a song-specific directory.
         /// </summary>
-        /// <param name="login">The login of the user.</param>
+        /// <param name="userLogin">The userLogin of the user.</param>
         /// <param name="songId">The ID of the song.</param>
-        /// <param name="filename">The name of the file to download.</param>
+        /// <param name="fileType">The name of the file to download.</param>
         /// <returns>The file as a downloadable stream.</returns>
         [HttpGet("downloadfromsong")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> DownloadFileFromSong(string login, int songId, string filename)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> DownloadFileFromSong(int songId, SongFile fileType)
         {
+            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (userLogin == null)
+                return Unauthorized();
             try
             {
-                User? user = await _userService.GetUserByLoginAsync(login);
-                byte[]? fileBytes = await _fileStorageService.ReadFileFromSongAsync(login, songId, filename, user != null ? user.AccessLevel : null);
+                User? user = await _userService.GetUserByLoginAsync(userLogin);
+                byte[]? fileBytes = await _fileStorageService.ReadFileFromSongAsync(userLogin, songId, fileType, user != null ? user.AccessLevel : null);
 
                 if (fileBytes != null)
                 {
-                    return File(fileBytes, "application/octet-stream", filename);
+                    return File(fileBytes, "application/octet-stream", fileType.ToString());
                 }
                 return BadRequest("No file is in directory.");
             }
@@ -155,7 +186,7 @@ namespace muZilla.Controllers
         /// <summary>
         /// Streams music from a song-specific directory with optional range processing.
         /// </summary>
-        /// <param name="login">The login of the user.</param>
+        /// <param name="login">The userLogin of the user.</param>
         /// <param name="songId">The ID of the song.</param>
         /// <param name="filename">The name of the file to stream.</param>
         /// <returns>A streamed file with appropriate headers for range processing.</returns>

@@ -32,7 +32,7 @@ namespace muZilla.Application.Services
         /// <param name="userId">The ID of the user initiating the unblock.</param>
         /// <param name="blockUserId">The ID of the user to be unblocked.</param>
         /// <returns>An asynchronous task representing the operation.</returns>
-        public async Task UnblockUserWithIdsAsync(int? userId, int? blockUserId)
+        public async Task<bool> UnblockUserWithIdsAsync(int? userId, int? blockUserId)
         {
             BlockedUser? blockedUser = _repository.GetAllAsync<BlockedUser>().Result
                 .Select(a => a)
@@ -43,7 +43,9 @@ namespace muZilla.Application.Services
             {
                 await _repository.RemoveAsync<BlockedUser>(blockedUser);
                 await _repository.SaveChangesAsync();
+                return true;
             }
+            return false;
         }
 
         /// <summary>
