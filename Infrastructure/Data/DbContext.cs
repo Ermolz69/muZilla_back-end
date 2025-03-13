@@ -191,6 +191,9 @@ namespace muZilla.Infrastructure.Data
                 .WithOne(m => m.Chat)
                 .HasForeignKey(m => m.ChatId)
                 .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Chat>()
+               .HasOne(c => c.Creator)
+               .WithMany();
 
         }
     }

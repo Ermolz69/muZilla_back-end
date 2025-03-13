@@ -199,7 +199,19 @@ namespace muZilla.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CreatorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatorId");
 
                     b.ToTable("Chats");
                 });
@@ -630,6 +642,17 @@ namespace muZilla.Infrastructure.Migrations
                     b.Navigation("Blocked");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("muZilla.Entities.Models.Chat", b =>
+                {
+                    b.HasOne("muZilla.Entities.Models.User", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
                 });
 
             modelBuilder.Entity("muZilla.Entities.Models.Collection", b =>

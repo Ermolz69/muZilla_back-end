@@ -5,6 +5,7 @@ using muZilla.Application.Services;
 using muZilla.Entities.Models;
 using muZilla.Application.DTOs;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace muZilla.Controllers
 {
@@ -32,8 +33,8 @@ namespace muZilla.Controllers
         /// </returns>
         [HttpPost("create")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ModelStateDictionary), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> CreateCollection([FromBody] CollectionDTO collectionDTO)
         {
@@ -54,12 +55,17 @@ namespace muZilla.Controllers
         /// <summary>
         /// Retrieves a collection by its unique identifier.
         /// </summary>
-        /// <param name="id">The unique identifier of the collection.</param>
+        /// <param name="collectionId">The unique identifier of the collection.</param>
         /// <returns>The collection details.</returns>
-        [HttpGet("getCollectionByIdAsync/{collectionId}")]
-        public async Task<Collection?> GetCollectionByIdAsync([FromRoute] int id)
+        [HttpGet("get/{collectionId}")]
+        [ProducesResponseType(typeof(Collection), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetCollectionByIdAsync([FromRoute] int collectionId)
         {
-            return await _collectionService.GetCollectionByIdAsync(id);
+            Collection? result = await _collectionService.GetCollectionByIdAsync(collectionId);
+            if (result != null)
+                return Ok(result);
+            return NotFound();
         }
 
         /// <summary>
@@ -71,10 +77,10 @@ namespace muZilla.Controllers
         [HttpPatch("update/{collectionId}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> UpdateCollectionByIdAsync(int collectionId, CollectionDTO collectionDTO)
+        [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> UpdateCollectionByIdAsync([FromRoute] int collectionId,[FromBody] CollectionDTO collectionDTO)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -101,10 +107,10 @@ namespace muZilla.Controllers
         /// <returns>A 200 OK response upon successful deletion.</returns>
         [HttpDelete("delete/{collectionId}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> DeleteCollectionByIdAsync([FromRoute] int collectionId)
         {
             if (!ModelState.IsValid)

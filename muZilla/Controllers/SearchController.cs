@@ -20,6 +20,8 @@ namespace muZilla.Controllers
         /// Example: GET /api/search/users?username=John&email=john@example.com
         /// </summary>
         [HttpGet("users")]
+        [ProducesResponseType(typeof(List<User>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string),StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> SearchUsers([FromQuery] string? username, [FromQuery] string? email, [FromQuery] int? publicId)
         {
             var results = await _searchService.SearchUsersAsync(username, email, publicId);
@@ -33,6 +35,9 @@ namespace muZilla.Controllers
         /// Example: GET /api/search/songs?title=love&genres=rock,pop&hasExplicit=true&fromDate=2023-01-01&toDate=2023-12-31
         /// </summary>
         [HttpGet("songs")]
+        [ProducesResponseType(typeof(List<Song>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> SearchSongs([FromQuery] Application.DTOs.Song.SongSearchParametersDTO parameters)
         {
             // Validate date range
@@ -60,6 +65,8 @@ namespace muZilla.Controllers
         /// Example: GET /api/search/collections?title=MyCollection&authorId=5
         /// </summary>
         [HttpGet("collections")]
+        [ProducesResponseType(typeof(List<Collection>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> SearchCollections([FromQuery] string? title, [FromQuery] int? authorId)
         {
             var results = await _searchService.SearchCollectionsAsync(title, authorId);

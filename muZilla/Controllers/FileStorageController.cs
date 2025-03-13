@@ -32,10 +32,11 @@ namespace muZilla.Controllers
         /// <returns>A response indicating the success or failure of the upload.</returns>
         [HttpPost("upload")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UploadFile(IFormFile file)
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UploadFile([FromForm] IFormFile file)
         {
 
             var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -77,13 +78,13 @@ namespace muZilla.Controllers
         /// <param name="songId">The ID of the song.</param>
         /// <param name="file">The file to be uploaded.</param>
         /// <returns>A response indicating the success or failure of the upload.</returns>
-        [HttpPost("uploadToSongFile")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [HttpPost("add_file_to_song/{songId}")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UploadToSongFile(int songId, IFormFile file)
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> AddFileToSong([FromRoute] int songId, IFormFile file)
         {
             var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             if (userLogin == null)
@@ -130,10 +131,9 @@ namespace muZilla.Controllers
         /// <param name="filename">The name of the file to download</param>
         /// <returns>The file as a downloadable stream</returns>
         [HttpGet("download")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> DownloadFile(string filename)
+        public async Task<IActionResult> DownloadFile([FromQuery] string filename)
         {
             var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             if (userLogin == null)
@@ -153,15 +153,13 @@ namespace muZilla.Controllers
         /// <summary>
         /// Downloads a file from a song-specific directory.
         /// </summary>
-        /// <param name="userLogin">The userLogin of the user.</param>
         /// <param name="songId">The ID of the song.</param>
         /// <param name="fileType">The name of the file to download.</param>
         /// <returns>The file as a downloadable stream.</returns>
-        [HttpGet("downloadfromsong")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [HttpGet("download_song_file/{songId}/{fileType}")]
+        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> DownloadFileFromSong(int songId, SongFile fileType)
+        public async Task<IActionResult> DownloadFileFromSong([FromRoute] int songId, SongFile fileType)
         {
             var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             if (userLogin == null)
@@ -194,7 +192,7 @@ namespace muZilla.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult StreamMusic(string login, int songId, string filename)
-        {
+        {//todo scary but todo
             var rangeHeader = Request.Headers.Range.FirstOrDefault();
             MusicStreamResult? result = _fileStorageService.GetMusicStream(login, songId, filename, rangeHeader);
 
@@ -217,12 +215,12 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="file">The image file to process.</param>
         /// <returns>The dominant color as an RGB string.</returns>
-        [HttpPost("dominantcolor")]
+        [HttpPost("domain_color")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetDominantColorFromImage(IFormFile file)
-        {
+        {//todo nahuya eto?
             try
             {
                 if (file == null || file.Length == 0)

@@ -12,8 +12,8 @@ using muZilla.Infrastructure.Data;
 namespace muZilla.Infrastructure.Migrations
 {
     [DbContext(typeof(MuzillaDbContext))]
-    [Migration("20250220131315_FixMessageChatRelation")]
-    partial class FixMessageChatRelation
+    [Migration("20250306135029_Chats")]
+    partial class Chats
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

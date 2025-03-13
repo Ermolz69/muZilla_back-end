@@ -5,7 +5,7 @@
 namespace muZilla.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class ChatIdFixed : Migration
+    public partial class Chats : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -29,13 +29,6 @@ namespace muZilla.Infrastructure.Migrations
                 nullable: false,
                 oldClrType: typeof(long),
                 oldType: "bigint");
-
-            migrationBuilder.AddColumn<int>(
-                name: "ChatId1",
-                table: "Messages",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
 
             migrationBuilder.CreateTable(
                 name: "ChatUser",
@@ -62,41 +55,16 @@ namespace muZilla.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Messages_ChatId1",
-                table: "Messages",
-                column: "ChatId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ChatUser_UserId",
                 table: "ChatUser",
                 column: "UserId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Messages_Chats_ChatId1",
-                table: "Messages",
-                column: "ChatId1",
-                principalTable: "Chats",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Messages_Chats_ChatId1",
-                table: "Messages");
-
             migrationBuilder.DropTable(
                 name: "ChatUser");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Messages_ChatId1",
-                table: "Messages");
-
-            migrationBuilder.DropColumn(
-                name: "ChatId1",
-                table: "Messages");
 
             migrationBuilder.AddColumn<int>(
                 name: "ChatId",

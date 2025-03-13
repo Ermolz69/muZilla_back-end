@@ -197,14 +197,14 @@ namespace muZilla.Application.Services
         /// <param name="userId">The ID of the first user.</param>
         /// <param name="friendId">The ID of the second user.</param>
         /// <returns>The ID of the friendship, or 0 if not found.</returns>
-        public async Task<int?> GetFriendsCoupleIdWithIds(int? userId, int friendId)
+        public async Task<FriendsCouple?> GetFriendsCouple(int? userId, int friendId)
         {
             var friendCouple = await _repository.GetAllAsync<FriendsCouple>().Result
                 .FirstOrDefaultAsync(a =>
                     (a.UserId == userId && a.FriendId == friendId) ||
                     (a.UserId == friendId && a.FriendId == userId));
 
-            return friendCouple == null ? null : friendCouple.Id;
+            return friendCouple;
         }
 
         /// <summary>

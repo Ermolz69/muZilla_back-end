@@ -262,6 +262,19 @@ namespace muZilla.Application.Services
                 .Include(u => u.AccessLevel)
                 .FirstOrDefaultAsync(u => u.Login == login);
         }
+        /// <summary>
+        /// Retrieves a user id by their public id.
+        /// </summary>
+        /// <param name="login">The login of the user to retrieve.</param>
+        /// <returns>
+        /// The user id if found, or null if no matching user is found.
+        /// </returns>
+        public async Task<int?> GetUserIdByPublicIdAsync(int? public_id)
+        {
+            User? user = await _repository.GetAllAsync<User>().Result
+                .FirstOrDefaultAsync(u => u.PublicId == public_id);
+            return user == null ? null : user.Id;
+        }
 
         /// <summary>
         /// Generates a JWT token for a given username.

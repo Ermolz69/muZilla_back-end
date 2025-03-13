@@ -4,6 +4,8 @@ using System.Security.Claims;
 using muZilla.Application.Services;
 using muZilla.Application.DTOs;
 using muZilla.Entities.Models;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Http;
 
 namespace muZilla.Controllers
 {
@@ -30,8 +32,8 @@ namespace muZilla.Controllers
         /// </returns>
         [HttpPost("create")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(Report), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ModelStateDictionary), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> CreateReport([FromBody] ReportCreateDTO dto)
         {
@@ -40,30 +42,30 @@ namespace muZilla.Controllers
                 return BadRequest(ModelState);
             }
 
-            var creatorLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            string? creatorLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             if (creatorLogin == null)
             {
                 return Unauthorized();
             }
 
-            var report = await _reportService.CreateReportAsync(creatorLogin, dto);
+            Report? report = await _reportService.CreateReportAsync(creatorLogin, dto);
             return Ok(report);
         }
 
         /// <summary>
         /// Retrieves a report by its unique identifier.
         /// </summary>
-        /// <param name="id">The unique identifier of the report.</param>
+        /// <param name="reportId">The unique identifier of the report.</param>
         /// <returns>
         /// A 200 OK response with the report if found,
         /// or a 404 Not Found response if the report does not exist.
         /// </returns>
-        [HttpGet("{id}")]
+        [HttpGet("get/{reportId}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(Report), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<ActionResult<Report>> GetReportById(int id)
+        public async Task<ActionResult<Report>> GetReportById([FromRoute] int reportId)
         {
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
           
@@ -77,7 +79,7 @@ namespace muZilla.Controllers
                 return Forbid();
             }
 
-            var report = await _reportService.GetReportByIdAsync(id);
+            var report = await _reportService.GetReportByIdAsync(reportId);
             if (report == null)
             {
                 return NotFound("Report not found");
@@ -88,15 +90,15 @@ namespace muZilla.Controllers
         /// <summary>
         /// Updates an existing report by its unique identifier.
         /// </summary>
-        /// <param name="id">The unique identifier of the report to update.</param>
+        /// <param name="reportId">The unique identifier of the report to update.</param>
         /// <param name="dto">The updated data for the report.</param>
         /// <returns>A 200 OK response upon successful update.</returns>
-        [HttpPatch("update/{id}")]
+        [HttpPatch("update/{reportId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UpdateReport(int id, [FromBody] ReportCreateDTO dto)
+        public async Task<IActionResult> UpdateReport([FromRoute] int reportId, [FromBody] ReportCreateDTO dto)
         {
-            await _reportService.UpdateReportAsync(id, dto);
+            await _reportService.UpdateReportAsync(reportId, dto);
             return Ok();
         }
 
@@ -109,9 +111,9 @@ namespace muZilla.Controllers
         /// or a 403 Forbidden response if the user does not have the required access level.
         /// </returns>
         [HttpGet("active")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<Report>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<List<Report>>> GetActiveReports()
         {
             var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -123,7 +125,7 @@ namespace muZilla.Controllers
 
             if (user.AccessLevel == null || user.AccessLevel.CanReport)
             {
-                return Forbid("Недостаточно прав для просмотра активных репортов");
+                return Forbid("User don`t have permission to view reports.");
             }
 
             var reports = await _reportService.GetActiveReportsAsync();

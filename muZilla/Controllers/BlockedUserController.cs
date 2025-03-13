@@ -29,13 +29,14 @@ namespace muZilla.Controllers
         [HttpPost("block/{blockedId}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> BlockUserWithIds([FromRoute] int blockedId)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> BlockUserWithId([FromRoute] int blockedId)
         {
             var Login = User.FindFirst(ClaimTypes.Name)?.Value;
             var blockerId = Login == null ? null : await _userService.GetIdByLoginAsync(Login);
 
-            int? idFriendCouple = await _friendsCoupleService.GetFriendsCoupleIdWithIds(blockerId, blockedId);
+            int? idFriendCouple = await _friendsCoupleService.GetFriendsCouple(blockerId, blockedId);
 
             if (blockerId == null)
                 return Unauthorized();
@@ -52,14 +53,14 @@ namespace muZilla.Controllers
         /// <summary>
         /// Unblocks a previously blocked user by their IDs.
         /// </summary>
-        /// <param name="BannedId">The ID of the user to be unblocked.</param>
+        /// <param name="blockedId">The ID of the user to be unblocked.</param>
         /// <returns>A 200 OK response upon successful unblocking.</returns>
-        [HttpPost("unblock")]
+        [HttpPost("unblock/{blockedId}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> UnblockUserWithIds([FromRoute] int BannedId)
+        public async Task<IActionResult> UnblockUserWithId([FromRoute] int blockedId)
         {
             var Login = User.FindFirst(ClaimTypes.Name)?.Value;
             var BannerId = Login == null ? null : await _userService.GetIdByLoginAsync(Login);
@@ -69,7 +70,7 @@ namespace muZilla.Controllers
                 return Unauthorized();
             }
 
-            bool result = await _blockedUserService.UnblockUserWithIdsAsync(BannerId, BannedId);
+            bool result = await _blockedUserService.UnblockUserWithIdsAsync(BannerId, blockedId);
             if(result) 
                 return Ok();
             return NotFound();
@@ -78,15 +79,15 @@ namespace muZilla.Controllers
         /// <summary>
         /// Checks if a user is blocked by their IDs.
         /// </summary>
-        /// <param name="BannedId">The ID of the user being checked.</param>
+        /// <param name="blockedId">The ID of the user being checked.</param>
         /// <returns>
         /// Returns true if the user is blocked; otherwise, false.
         /// </returns>
-        [HttpGet("check/{BannedId}")]
+        [HttpGet("check/{blockedId}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> IsUserBlocked([FromRoute] int BannedId)
+        public async Task<IActionResult> IsUserBlocked([FromRoute] int blockedId)
         {
             var Login = User.FindFirst(ClaimTypes.Name)?.Value;
             var BannerId = Login == null ? null : await _userService.GetIdByLoginAsync(Login);
@@ -94,7 +95,7 @@ namespace muZilla.Controllers
             if (BannerId == null)
                 return Unauthorized();
 
-            return Ok(_blockedUserService.CheckBlockedUser(BannerId, BannedId));
+            return Ok(_blockedUserService.CheckBlockedUser(BannerId, blockedId));
         }
     }
 }

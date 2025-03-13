@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace muZilla.Controllers
 {
     [ApiController]
-    [Route("api/friendscouple")]
+    [Route("api/friends_couple")]
     public class FriendsCoupleController : ControllerBase
     {
         private readonly FriendsCoupleService _friendsCoupleService;
@@ -24,14 +24,14 @@ namespace muZilla.Controllers
         /// <summary>
         /// Creates a friend request between two users.
         /// </summary>
-        /// <param name="requester">The ID of the user sending the request.</param>
         /// <param name="receiver">The ID of the user receiving the request.</param>
         /// <returns>A 200 OK response if successful, or a 400 Bad Request if blocked or an error occurs.</returns>
-        [HttpPost("createrequest")]
+        [HttpPost("create_request/{receiver}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateRequestAsync(int receiver)
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> CreateRequestAsync([FromRoute] int receiver)
         {
             int? requester = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
             if (requester == null)
@@ -55,9 +55,9 @@ namespace muZilla.Controllers
         /// Retrieves all active friend requests for a user.
         /// </summary>
         /// <returns>A list of IDs representing active friend requests.</returns>
-        [HttpGet("getallactive")]
+        [HttpGet("get_all_active")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<int>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetAllActiveForIdAsync()
         {
@@ -74,12 +74,12 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="friendId">The ID of the user who sent the request.</param>
         /// <returns>A 200 OK response if successful, or a 400 Bad Request if an error occurs.</returns>
-        [HttpPost("accept")]
+        [HttpPost("accept/{friendId}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> AcceptFriendsCoupleWithIds(int friendId)
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> AcceptFriendsCoupleWithIds([FromRoute] int friendId)
         {
             int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
             if (userId == null)
@@ -96,12 +96,12 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="requesterId">The ID of the user who sent the request.</param>
         /// <returns>A 200 OK response if successful, or a 400 Bad Request if an error occurs.</returns>
-        [HttpPost("deny")]
+        [HttpPost("deny/{requesterId}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DenyFriendsCoupleWithIds(int requesterId)
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DenyFriendsCoupleWithIds([FromRoute] int requesterId)
         {
             int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
             if (userId == null)
@@ -118,9 +118,9 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="friendId">The ID of the second user.</param>
         /// <returns>True if the users are friends; otherwise, false.</returns>
-        [HttpGet("check")]
+        [HttpGet("check/{friendId}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> CheckFriendsCoupleWithIds(int friendId)
@@ -136,58 +136,62 @@ namespace muZilla.Controllers
         /// <summary>
         /// Deletes a friendship by its ID.
         /// </summary>
-        /// <param name="id">The ID of the friendship to delete.</param>
+        /// <param name="coupleId">The ID of the friendship to delete.</param>
         /// <returns>A 200 OK response upon successful deletion.</returns>
-        [HttpDelete("delete")]
+        [HttpDelete("delete/{coupleId}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteFriendsCoupleById(int id)
+        public async Task<IActionResult> DeleteFriendsCoupleById(int coupleId)
         {
             int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
             if (userId == null)
             {
                 return Unauthorized();
             }
-            FriendsCouple? friendsCouple = await _friendsCoupleService.GetFriendCoupleByIdAsync(id);
+            FriendsCouple? friendsCouple = await _friendsCoupleService.GetFriendCoupleByIdAsync(coupleId);
             if(friendsCouple == null)
                 return NotFound();
             if (friendsCouple.UserId != userId && friendsCouple.FriendId != userId)
                 return NotFound();
-            await _friendsCoupleService.DeleteFriendsCoupleByIdAsync(id);
+            await _friendsCoupleService.DeleteFriendsCoupleByIdAsync(coupleId);
             return Ok();
         }
 
         /// <summary>
-        /// Retrieves the ID of a friendship between two users.
+        /// Retrieves the couple of a friendship between two users.
         /// </summary>
-        /// <param name="id">The ID of the first user.</param>
         /// <param name="friendId">The ID of the second user.</param>
-        /// <returns>The ID of the friendship.</returns>
-        [HttpGet("getfriendcoupleid")]
+        /// <returns>The couple of the friendship.</returns>
+        [HttpGet("get_friend_couple/{friendId}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(FriendsCouple), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetIdWithIds(int friendId)
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetCouple(int friendId)
         {
             int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
             if (userId == null)
             {
                 return Unauthorized();
             }
-            return Ok(await _friendsCoupleService.GetFriendsCoupleIdWithIds(userId.Value, friendId));
+            var result = await _friendsCoupleService.GetFriendsCouple(userId.Value, friendId);
+            if(result != null)
+                return Ok(result);
+            return NotFound();
         }
 
         /// <summary>
         /// Retrieves a list of friends for a user.
         /// </summary>
-        /// <param name="id">The ID of the user.</param>
+        /// <param name="userId">The ID of the user.</param>
         /// <returns>A list of IDs representing the user's friends.</returns>
-        [HttpGet("friendslist")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [HttpGet("friends_list/{userId}")]
+        [ProducesResponseType(typeof(List<int>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> FriendsListById(int userId)
+        public async Task<IActionResult> FriendsListById([FromRoute] int userId)
         {
             List<int> friendsIds = await _friendsCoupleService.GetFriendsById(userId);
             if (friendsIds == null)
@@ -198,9 +202,8 @@ namespace muZilla.Controllers
         /// <summary>
         /// Creates an invite link for a user.
         /// </summary>
-        /// <param name="userId">The ID of the user creating the invite link.</param>
         /// <returns>A 200 OK response upon successful creation.</returns>
-        [HttpPost("createinvitelink")]
+        [HttpPost("create_invite_link")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -220,12 +223,12 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="link">The invite link.</param>
         /// <returns>A 200 OK response upon successful acceptance, or a 400 Bad Request if the link is invalid.</returns>
-        [HttpGet("addfriendbylink/{link}")]
+        [HttpGet("add_friend_by_link/{link}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GoToLink(string link)
+        public async Task<IActionResult> GoToLink([FromRoute] string link)
         {
             int? userId = await _userService.GetIdByLoginAsync(User.FindFirst(ClaimTypes.Name)?.Value);
             if (userId == null)

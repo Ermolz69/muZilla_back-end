@@ -5,11 +5,12 @@ using muZilla.Application.Services;
 using muZilla.Entities.Models;
 using muZilla.Application.DTOs;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace muZilla.Controllers
 {
     [ApiController]
-    [Route("api/accesslevel")]
+    [Route("api/access_level")]
     public class AccessLevelController : ControllerBase
     {
         private readonly AccessLevelService _accessLevelService;
@@ -34,7 +35,7 @@ namespace muZilla.Controllers
         [HttpPost("create")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(object),StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateAccessLevel([FromBody] AccessLevelDTO accessLevelDTO)
         {
             if (!ModelState.IsValid)
@@ -58,11 +59,15 @@ namespace muZilla.Controllers
         /// <param name="id">The unique identifier of the access level.</param>
         /// <returns>The access level details if found, or null if not.</returns>
         [HttpGet("get/{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AccessLevel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<AccessLevel?> GetAccessLevel([FromRoute] int id)
+        public async Task<IActionResult> GetAccessLevel([FromRoute] int id)
         {
-            return await _accessLevelService.GetAccessLevelById(id);
+            AccessLevel? result = await _accessLevelService.GetAccessLevelById(id);
+
+            if(result != null)
+                return Ok(result);
+            return NotFound();
         }
 
         /// <summary>
@@ -77,7 +82,7 @@ namespace muZilla.Controllers
         [HttpPatch("update/{id}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ModelStateDictionary),StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> UpdateAccessLevelById([FromRoute] int id,[FromBody] AccessLevelDTO accessLevelDTO)
         {
@@ -88,7 +93,7 @@ namespace muZilla.Controllers
             var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             if (string.IsNullOrEmpty(userLogin))
             {
-                return Unauthorized("Invalid or missing token.");
+                return Unauthorized();
             }
 
             AccessLevelService.EnsureUserCanBanUser(await _userService.GetUserByLoginAsync(userLogin));
@@ -124,8 +129,8 @@ namespace muZilla.Controllers
         /// Creates a default access level asynchronously.
         /// </summary>
         /// <returns>The unique identifier of the newly created default access level.</returns>
-        [HttpGet("default")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [HttpPost("create_default")]
+        [ProducesResponseType(typeof(int) ,StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateDefaultAsync()
         {
             // test method

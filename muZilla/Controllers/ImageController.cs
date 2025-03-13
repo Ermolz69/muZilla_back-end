@@ -52,10 +52,10 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="id">The unique identifier of the image.</param>
         /// <returns>The image details if found, or null if not found.</returns>
-        [HttpGet("{id}")]
+        [HttpGet("get/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<Entities.Models.Image?> GetImageById(int id)
+        public async Task<Entities.Models.Image?> GetImageById([FromRoute] int id)
         {
             return await _imageService.GetImageById(id);
         }
@@ -68,9 +68,9 @@ namespace muZilla.Controllers
         /// <returns>A 200 OK response upon successful update, or a 400 Bad Request if the input is invalid.</returns>
         [HttpPatch("update/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UpdateImageById(int id, ImageDTO imageDTO)
+        public async Task<IActionResult> UpdateImageById([FromRoute] int id, ImageDTO imageDTO)
         {
             if (!ModelState.IsValid)
             {
@@ -94,8 +94,8 @@ namespace muZilla.Controllers
         [HttpDelete("delete/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteImageById(int id)
-        {
+        public async Task<IActionResult> DeleteImageById([FromRoute] int id)
+        {//to do
             await _imageService.DeleteImageByIdAsync(id);
             return Ok();
         }

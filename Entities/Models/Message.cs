@@ -21,6 +21,5 @@ namespace muZilla.Entities.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         [ForeignKey("ChatId")]
         public virtual Chat Chat { get; set; }
-
     }
 }

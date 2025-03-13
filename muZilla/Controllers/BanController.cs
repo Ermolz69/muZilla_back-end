@@ -6,6 +6,7 @@ using muZilla.Entities.Enums;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Claims;
 using muZilla.Entities.Models;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace muZilla.Controllers
 {
@@ -45,11 +46,12 @@ namespace muZilla.Controllers
         /// <returns>
         /// An <see cref="IActionResult"/> indicating the result of the ban operation.
         /// </returns>
-        [HttpPost("banUser")]
+        [HttpPost("ban_user")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> BanUser([FromBody] BanRequestDTO banRequest)
         {
             if (!ModelState.IsValid)
@@ -92,12 +94,12 @@ namespace muZilla.Controllers
         /// <returns>
         /// An <see cref="IActionResult"/> indicating the result of the unban operation.
         /// </returns>
-        [HttpPost("unbanUser/{userId}")]
+        [HttpPost("unban_user/{userId}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UnbanUser([FromRoute] int userId)
         {
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -128,13 +130,13 @@ namespace muZilla.Controllers
         /// <returns>
         /// An <see cref="IActionResult"/> indicating whether the user is banned.
         /// </returns>
-        [HttpGet("isUserBanned/{userId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [HttpGet("is_user_banned/{userId}")]
+        [ProducesResponseType(typeof(BanResultType), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> IsUserBanned([FromRoute] int userId)
         {
             if(_userService.IsUserValid(userId))
-                return Ok(new { IsBanned = (await _banService.IsUserBannedAsync(userId) == BanResultType.ItBanned ? true : false) });
+                return Ok(new { IsBanned = await _banService.IsUserBannedAsync(userId) });
 
             return BadRequest("not valid userId");
         }
@@ -150,12 +152,12 @@ namespace muZilla.Controllers
         /// <returns>
         /// An <see cref="IActionResult"/> indicating the result of the ban operation.
         /// </returns>
-        [HttpPost("banSong")]
+        [HttpPost("ban_song")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> BanSong([FromBody] BanRequestDTO banRequest)
         {
             if (!ModelState.IsValid)
@@ -200,12 +202,12 @@ namespace muZilla.Controllers
         /// <returns>
         /// An <see cref="IActionResult"/> indicating the result of the unban operation.
         /// </returns>
-        [HttpPost("unbanSong/{songId}")]
+        [HttpPost("unban_song/{songId}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UnbanSong([FromRoute] int songId)
         {
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -236,14 +238,14 @@ namespace muZilla.Controllers
         /// <returns>
         /// An <see cref="IActionResult"/> indicating whether the song is banned.
         /// </returns>
-        [HttpGet("isBannedSong/{songId}")]
+        [HttpGet("is_song_banned/{songId}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(BanResultType), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> IsSongBanned([FromRoute] int songId)
         {
             if (_songService.IsSongValid(songId))
-                return Ok(new { IsBanned = (await _banService.IsSongBannedAsync(songId) == BanResultType.ItBanned ? true : false) });
+                return Ok(new { IsBanned = await _banService.IsSongBannedAsync(songId)  });
 
             return NotFound("Not valid songId");
         }
@@ -259,12 +261,12 @@ namespace muZilla.Controllers
         /// <returns>
         /// An <see cref="IActionResult"/> indicating the result of the ban operation.
         /// </returns>
-        [HttpPost("banCollection")]
+        [HttpPost("ban_collection")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> BanCollection([FromBody] BanRequestDTO banRequest)
         {
             if (!ModelState.IsValid)
@@ -309,12 +311,12 @@ namespace muZilla.Controllers
         /// <returns>
         /// An <see cref="IActionResult"/> indicating the result of the unban operation.
         /// </returns>
-        [HttpPost("unbanCollection/{id}")]
+        [HttpPost("unban_collection/{id}")]
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UnbanCollection([FromRoute] int collectionId)
         {
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -345,8 +347,8 @@ namespace muZilla.Controllers
         /// <returns>
         /// An <see cref="IActionResult"/> indicating whether the collection is banned.
         /// </returns>
-        [HttpGet("isBannedCollection/{collectionId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [HttpGet("is_banned_collection/{collectionId}")]
+        [ProducesResponseType(typeof(BanResultType), StatusCodes.Status200OK)]
         public async Task<IActionResult> IsCollectionBanned([FromRoute] int collectionId)
         {
             BanResultType isBanned = await _banService.IsCollectionBannedAsync(collectionId);
@@ -361,21 +363,21 @@ namespace muZilla.Controllers
         /// <returns>
         /// An <see cref="IActionResult"/> containing the latest bans in JSON format.
         /// </returns>
-        [HttpGet("latestBans")]
+        [HttpGet("latest_bans")]
         [Authorize]
+        [ProducesResponseType(typeof(List<BanDTO>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetLatestBans()
         {
             var adminLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             var admin = adminLogin == null ? null : await _userService.GetUserByLoginAsync(adminLogin);
 
-
-            //todo
             if (admin == null) { 
-                return BadRequest("You must be admin to view bans.");
+                return Forbid("You must be admin to view bans.");
             }
             if (!admin.AccessLevel.CanManageReports)
             {
-                return BadRequest("You must have specified admin permissions to view bans.");
+                return Forbid("You must have specified admin permissions to view bans.");
             }
 
             var bans = await _banService.GetLatestBansAsync();

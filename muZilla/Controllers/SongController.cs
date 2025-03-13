@@ -108,7 +108,7 @@ namespace muZilla.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> PublishSong([FromForm] PublishSongRequest request)
-        {
+        {//todo
             if(!ModelState.IsValid) {
                 return BadRequest(ModelState);
             }
@@ -241,7 +241,7 @@ namespace muZilla.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> LikeSong(int userId, int songId)
-        {
+        {//todo
             await _songService.ToggleLikeSongAsync(userId, songId);
             return Ok();
         }
@@ -253,7 +253,7 @@ namespace muZilla.Controllers
         /// <returns>A 200 OK response upon successful increment.</returns>
         [HttpPost("view/{songId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> AddOneView(int songId)
+        public async Task<IActionResult> AddOneView([FromRoute] int songId)
         {
             await _songService.AddOneView(songId);
             return Ok();

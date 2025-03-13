@@ -12,8 +12,8 @@ using muZilla.Infrastructure.Data;
 namespace muZilla.Infrastructure.Migrations
 {
     [DbContext(typeof(MuzillaDbContext))]
-    [Migration("20250220130644_ChatIdFixed")]
-    partial class ChatIdFixed
+    [Migration("20250306144607_ChatType")]
+    partial class ChatType
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -202,7 +202,19 @@ namespace muZilla.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CreatorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatorId");
 
                     b.ToTable("Chats");
                 });
@@ -307,9 +319,6 @@ namespace muZilla.Infrastructure.Migrations
                     b.Property<int>("ChatId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ChatId1")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -328,8 +337,6 @@ namespace muZilla.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ChatId");
-
-                    b.HasIndex("ChatId1");
 
                     b.ToTable("Messages");
                 });
@@ -640,6 +647,17 @@ namespace muZilla.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("muZilla.Entities.Models.Chat", b =>
+                {
+                    b.HasOne("muZilla.Entities.Models.User", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
+                });
+
             modelBuilder.Entity("muZilla.Entities.Models.Collection", b =>
                 {
                     b.HasOne("muZilla.Entities.Models.User", "Author")
@@ -680,15 +698,9 @@ namespace muZilla.Infrastructure.Migrations
 
             modelBuilder.Entity("muZilla.Entities.Models.Message", b =>
                 {
-                    b.HasOne("muZilla.Entities.Models.Chat", null)
+                    b.HasOne("muZilla.Entities.Models.Chat", "Chat")
                         .WithMany("Messages")
                         .HasForeignKey("ChatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("muZilla.Entities.Models.Chat", "Chat")
-                        .WithMany()
-                        .HasForeignKey("ChatId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
