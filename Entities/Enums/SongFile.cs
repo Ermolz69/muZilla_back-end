@@ -4,6 +4,6 @@
     {
        Cover,
        Song,
-       Lyrics
+       Lyrics,
     }
 }

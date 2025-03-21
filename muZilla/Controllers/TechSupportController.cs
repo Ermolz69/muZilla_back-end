@@ -11,7 +11,7 @@ using muZilla.Infrastructure.Data;
 namespace muZilla.Controllers
 {
     [ApiController]
-    [Route("api/techsupport")]
+    [Route("api/tech-support")]
     public class TechSupportController : ControllerBase
     {
         private readonly TechSupportService _techSupportService;
@@ -118,7 +118,7 @@ namespace muZilla.Controllers
             var otherUserId = await _userService.GetIdByLoginAsync(otherUserLogin);
             if (otherUserId == -1)
             {
-                return BadRequest("Другой пользователь не найден.");
+                return BadRequest("Second user not found.");
             }
 
             var messages = await _techSupportService.GetMessagesAsync(userLogin, otherUserLogin);

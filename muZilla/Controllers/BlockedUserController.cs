@@ -36,11 +36,11 @@ namespace muZilla.Controllers
             var Login = User.FindFirst(ClaimTypes.Name)?.Value;
             var blockerId = Login == null ? null : await _userService.GetIdByLoginAsync(Login);
 
-            int? idFriendCouple = await _friendsCoupleService.GetFriendsCouple(blockerId, blockedId);
+            int? idFriendCouple = (await _friendsCoupleService.GetFriendsCouple(blockerId, blockedId))!.Id;
 
             if (blockerId == null)
                 return Unauthorized();
-
+            
             if (!await _friendsCoupleService.DeleteFriendsCoupleByIdAsync(idFriendCouple))
             {
                 return NotFound();

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace muZilla.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    /// готово епта
+
     public partial class PublishDateAdd : Migration
     {
         /// <inheritdoc />

@@ -5,6 +5,7 @@ using muZilla.Entities.Models;
 using muZilla.Application.DTOs.Song;
 using muZilla.Application.Interfaces;
 using muZilla.Application.DTOs.User;
+using muZilla.Entities.Enums;
 
 namespace muZilla.Application.Services
 {
@@ -94,14 +95,10 @@ namespace muZilla.Application.Services
                     song.Authors.Add(author);
             }
 
-            await _repository.AddAsync(song);
+            song = await _repository.AddAsync(song);
             await _repository.SaveChangesAsync();
 
-            int id = (await _repository.GetAllAsync<Song>())
-                .OrderBy(s => s.Id)
-                .LastOrDefault()?.Id ?? 0;
-
-            return id;
+            return song.Id;
 
         }
 
@@ -142,7 +139,7 @@ namespace muZilla.Application.Services
         /// A status code indicating the result: 
         /// 200 for success, 404 if the song is not found.
         /// </returns>
-        public async Task<int> UpdateSongByIdAsync(int id, SongDTO songDTO)
+        public async Task<SongResultType> UpdateSongByIdAsync(int id, SongDTO songDTO)
         {
             var song = await _repository.GetAllAsync<Song>().Result
                 .Include(s => s.Authors)
@@ -150,7 +147,7 @@ namespace muZilla.Application.Services
 
             if (song == null)
             {
-                return 404;
+                return SongResultType.NotFound;
             }
 
             song.Title = songDTO.Title;
@@ -177,7 +174,7 @@ namespace muZilla.Application.Services
             await _repository.UpdateAsync(song);
             await _repository.SaveChangesAsync();
 
-            return 200;
+            return SongResultType.Success;
         }
 
         /// <summary>

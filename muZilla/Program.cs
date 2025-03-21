@@ -32,7 +32,7 @@ namespace muZilla
             });
             builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
             {
-                options.MultipartBodyLengthLimit = 104857600; // 100MB, можно увеличить
+                options.MultipartBodyLengthLimit = 104857600; // 100MB
             });
 
             builder.Services.AddDbContext<MuzillaDbContext>(options =>
@@ -103,10 +103,10 @@ namespace muZilla
             {
                 options.AddPolicy("AllowAngular", policy =>
                 {
-                    policy.WithOrigins("http://localhost:4200") // URL твоего Angular приложения
-                          .AllowAnyHeader() // Разрешить любые заголовки
-                          .AllowAnyMethod() // Разрешить любые методы (GET, POST и т.д.)
-                          .AllowCredentials(); // Разрешить передачу куков или токенов
+                    policy.WithOrigins("http://localhost:4200")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
                 });
             });
 
@@ -118,7 +118,7 @@ namespace muZilla
                 app.UseSwaggerUI();
             }
 
-            // Использование CORS
+            // CORS
             app.UseCors("AllowAngular");
 
             app.UseAuthentication();

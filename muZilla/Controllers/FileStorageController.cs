@@ -15,13 +15,15 @@ namespace muZilla.Controllers
         private readonly FileStorageService _fileStorageService;
         private readonly UserService _userService;
         private readonly SongService _songService;
+        private readonly AccessLevelService _accessLevelService;
         private readonly IConfiguration _config;
 
-        public FileStorageController(FileStorageService fileStorageService, UserService userService, SongService songService, IConfiguration config)
+        public FileStorageController(FileStorageService fileStorageService, UserService userService, SongService songService, AccessLevelService accessLevelService, IConfiguration config)
         {
             _fileStorageService = fileStorageService;
             _userService = userService;
             _songService = songService;
+            _accessLevelService = accessLevelService;
             _config = config;
         }
 
@@ -36,12 +38,13 @@ namespace muZilla.Controllers
         [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UploadFile([FromForm] IFormFile file)
+        public async Task<IActionResult> UploadFile(IFormFile file)
         {
 
             var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             if(userLogin == null)
                 return Unauthorized();
+
             // test method
             if (!_config.GetSection("Owners").Get<string[]>()!.Contains(User.FindFirst(ClaimTypes.Name)?.Value))
             {
@@ -78,21 +81,22 @@ namespace muZilla.Controllers
         /// <param name="songId">The ID of the song.</param>
         /// <param name="file">The file to be uploaded.</param>
         /// <returns>A response indicating the success or failure of the upload.</returns>
-        [HttpPost("add_file_to_song/{songId}")]
+        [HttpPost("add-file-to-song/{songId}")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> AddFileToSong([FromRoute] int songId, IFormFile file)
         {
-            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            string? userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             if (userLogin == null)
                 return Unauthorized();
 
             Song? song = await _songService.GetSongByIdAsync(songId);
             if (song == null) {
-                return BadRequest();
+                return NotFound();
             };
 
             if(song.Authors.ToList()[0].Login != userLogin) {
@@ -106,7 +110,7 @@ namespace muZilla.Controllers
                     return BadRequest("Invalid file upload.");
                 }
 
-                using var memoryStream = new MemoryStream();
+                using MemoryStream memoryStream = new MemoryStream();
                 await file.CopyToAsync(memoryStream);
                 byte[] fileBytes = memoryStream.ToArray();
 
@@ -124,29 +128,45 @@ namespace muZilla.Controllers
             }
         }
 
-        //todo
+        //deprecated 
         /// <summary>
         /// Downloads a file from a user's directory.
         /// </summary>
         /// <param name="filename">The name of the file to download</param>
         /// <returns>The file as a downloadable stream</returns>
+        [Obsolete("use DownloadFileFromSong instead")]
         [HttpGet("download")]
+        [Authorize]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DownloadFile([FromQuery] string filename)
         {
-            var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            string? userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             if (userLogin == null)
                 return Unauthorized();
-            try
-            {
-                byte[] fileBytes = await _fileStorageService.ReadFileAsync(userLogin, filename);
 
-                return File(fileBytes, "application/octet-stream", filename);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error occurred: {ex.Message}");
+            User? user = await _userService.GetUserByLoginAsync(userLogin);
+            AccessLevelResultType can_download = _accessLevelService.EnsureUserCanDownload(user);
+
+            switch (can_download) { 
+                case AccessLevelResultType.Success:
+                    try
+                    {
+                        byte[] fileBytes = await _fileStorageService.ReadFileAsync(userLogin, filename);
+
+                        return File(fileBytes, "application/octet-stream", filename);
+                    }
+                    catch (Exception ex)
+                    {
+                        return StatusCode(500, $"Internal server error: {ex.Message}");
+                    }
+                case AccessLevelResultType.CannotDownload:
+                    return Forbid();
+                default:
+                    return BadRequest(can_download.ToString());
+
             }
         }
 
@@ -156,7 +176,7 @@ namespace muZilla.Controllers
         /// <param name="songId">The ID of the song.</param>
         /// <param name="fileType">The name of the file to download.</param>
         /// <returns>The file as a downloadable stream.</returns>
-        [HttpGet("download_song_file/{songId}/{fileType}")]
+        [HttpGet("download-song-file/{songId}/{fileType}")]
         [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> DownloadFileFromSong([FromRoute] int songId, SongFile fileType)
@@ -189,8 +209,7 @@ namespace muZilla.Controllers
         /// <param name="filename">The name of the file to stream.</param>
         /// <returns>A streamed file with appropriate headers for range processing.</returns>
         [HttpGet("stream")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
         public IActionResult StreamMusic(string login, int songId, string filename)
         {//todo scary but todo
             var rangeHeader = Request.Headers.Range.FirstOrDefault();
@@ -210,38 +229,6 @@ namespace muZilla.Controllers
             return File(stream, contentType, enableRangeProcessing: enableRangeProcessing);
         }
 
-        /// <summary>
-        /// Calculates the dominant color of an uploaded image file.
-        /// </summary>
-        /// <param name="file">The image file to process.</param>
-        /// <returns>The dominant color as an RGB string.</returns>
-        [HttpPost("domain_color")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetDominantColorFromImage(IFormFile file)
-        {//todo nahuya eto?
-            try
-            {
-                if (file == null || file.Length == 0)
-                {
-                    return BadRequest("Invalid file upload.");
-                }
-
-                using var memoryStream = new MemoryStream();
-                await file.CopyToAsync(memoryStream);
-                memoryStream.Position = 0;
-
-                using var image = new Bitmap(memoryStream);
-
-                Color dominantColor = FileStorageService.GetDominantColor(image);
-
-                return Ok($"{dominantColor.R},{dominantColor.G},{dominantColor.B}");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
+        
     }
 }

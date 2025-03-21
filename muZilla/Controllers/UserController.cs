@@ -14,6 +14,7 @@ using muZilla.Entities.Enums;
 using muZilla.Application.DTOs.User;
 using muZilla.ResponseRequestModels;
 using static System.Net.Mime.MediaTypeNames;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace muZilla.Controllers
 {
@@ -41,24 +42,26 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="id">The unique identifier of the user.</param>
         /// <returns>The user details.</returns>
-        [HttpGet("{id}")]
+        [HttpGet("get/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<User> GetUserByIdAsync(int id)
+        public async Task<IActionResult> GetUserByIdAsync(int id)
         {
-            return await _userService.GetUserByIdAsync(id);
+            User? result = await _userService.GetUserByIdAsync(id);
+            if(result == null)
+                return NotFound();
+            return Ok(result);
         }
 
         /// <summary>
         /// Updates a user by their unique identifier.
         /// </summary>
-        /// <param name="id">The unique identifier of the user to update.</param>
-        /// <param name="userDTO">The updated user data.</param>
         /// <returns>A 200 OK response upon successful update, or a 400 Bad Request if the input is invalid.</returns>
         [HttpPatch("update")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ModelStateDictionary) ,StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateUserByIdAsync(RegisterDTO registerDTO)
         {
             if (!ModelState.IsValid)
@@ -77,12 +80,11 @@ namespace muZilla.Controllers
         /// <summary>
         /// Deletes a user by their unique identifier.
         /// </summary>
-        /// <param name="id">The unique identifier of the user to delete.</param>
         /// <returns>A 200 OK response upon successful deletion.</returns>
         [HttpDelete("delete")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(object),StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> DeleteUserByIdAsync()
         {
             var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -104,8 +106,6 @@ namespace muZilla.Controllers
         /// <summary>
         /// Registers a new user along with their profile picture.
         /// </summary>
-        /// <param name="userDTO">The data transfer object containing user details.</param>
-        /// <param name="profile">The profile picture file (optional).</param>
         /// <returns>A 200 OK response upon successful registration, or a 404 Not Found if the default image is missing.</returns>
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -119,6 +119,7 @@ namespace muZilla.Controllers
 
             if (request.profile == null)
             {
+                //todo
                 var rootPath = Directory.GetCurrentDirectory();
                 var filePath = Path.Combine(rootPath, "DefaultPictures", "default.jpg");
 
@@ -160,19 +161,18 @@ namespace muZilla.Controllers
         /// <summary>
         /// Logs in a user and generates a JWT token.
         /// </summary>
-        /// <param name="login">The user's login OR email.</param>
-        /// <param name="password">The user's password.</param>
         /// <returns>
         /// A 200 OK response with the generated token, or a 400 Bad Request if the login credentials are invalid.
         /// </returns>
         [HttpPost("login")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status405MethodNotAllowed)]
         public IActionResult Login(LoginDTO loginDTO)
         {
             LoginResultType res = _userService.CanLogin(loginDTO);
             if (res == LoginResultType.Banned) 
-                return BadRequest("Something went wrong.");
+                return Forbid("User is banned.");
 
             if (res == LoginResultType.NotFound || res == LoginResultType.IncorrectData) 
                 return BadRequest($"Incorrect login or incorrect password. Access denied. Code: {res.ToString()}");
@@ -187,8 +187,9 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="login">The user's login.</param>
         /// <returns>The user ID.</returns>
-        [HttpGet("getidbylogin")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [HttpGet("get-id-by-login")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetIdByLogin(string login)
         {
             int? id = await _userService.GetIdByLoginAsync(login);

@@ -129,7 +129,7 @@ namespace muZilla.Controllers
         /// Creates a default access level asynchronously.
         /// </summary>
         /// <returns>The unique identifier of the newly created default access level.</returns>
-        [HttpPost("create_default")]
+        [HttpPost("create-default")]
         [ProducesResponseType(typeof(int) ,StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateDefaultAsync()
         {

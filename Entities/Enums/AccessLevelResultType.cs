@@ -1,6 +1,6 @@
 ﻿namespace muZilla.Entities.Enums
 {
-    public enum BanResultType
+    public enum AccessLevelResultType
     {
         #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         UserIsNull,
@@ -19,7 +19,7 @@
         CannotBanSongs,
         CannotBanCollections,
         CannotManageSupports,
-        CannotDownloadSongs,
+        CannotDownload,
 
         Success
         #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

@@ -28,21 +28,19 @@ namespace muZilla.Infrastructure.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Конфигурация связи один-ко-многим между User и AccessLevel 
             modelBuilder.Entity<User>()
                 .HasOne(u => u.AccessLevel)
                 .WithMany()
                 .HasForeignKey("AccessLevelId")
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Конфигурация связи один-ко-многим между User и ProfilePicture (Image)
             modelBuilder.Entity<User>()
                 .HasOne(u => u.ProfilePicture)
                 .WithMany()
                 .HasForeignKey("ProfilePictureId")
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Конфигурация связи один-ко-многим для FriendsCouple
+
             modelBuilder.Entity<FriendsCouple>()
                 .HasOne(fc => fc.User)
                 .WithMany(u => u.Friends)
@@ -55,7 +53,6 @@ namespace muZilla.Infrastructure.Data
                 .HasForeignKey(fc => fc.FriendId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Конфигурация связи один-ко-многим для BlockedUser
             modelBuilder.Entity<BlockedUser>()
                 .HasOne(bu => bu.User)
                 .WithMany(u => u.Blocked)
@@ -68,7 +65,7 @@ namespace muZilla.Infrastructure.Data
                 .HasForeignKey(bu => bu.BlockedId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Конфигурация связи многие-ко-многим между Song и Author (User)
+
             modelBuilder.Entity<Song>()
                 .HasMany(s => s.Authors)
                 .WithMany()
@@ -85,28 +82,26 @@ namespace muZilla.Infrastructure.Data
                             .HasConstraintName("FK_SongAuthor_Songs_SongId")
                             .OnDelete(DeleteBehavior.Cascade));
 
-            // Конфигурация связи один-ко-многим для Remixes
+
             modelBuilder.Entity<Song>()
                 .HasOne(s => s.Original)
                 .WithMany(s => s.Remixes)
                 .HasForeignKey(s => s.OriginalId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
 
-            // Конфигурация связи один-ко-многим между Collection и Author (User)
             modelBuilder.Entity<Collection>()
                 .HasOne(c => c.Author)
                 .WithMany()
                 .HasForeignKey("AuthorId")
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Конфигурация связи один-ко-многим между Collection и Cover (Image)
+
             modelBuilder.Entity<Collection>()
                 .HasOne(c => c.Cover)
                 .WithMany()
                 .HasForeignKey("CoverId")
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Конфигурация связи многие-ко-многим между Collection и Song
             modelBuilder.Entity<Collection>()
                 .HasMany(c => c.Songs)
                 .WithMany()
@@ -123,14 +118,14 @@ namespace muZilla.Infrastructure.Data
                             .HasConstraintName("FK_CollectionSong_Collections_CollectionId")
                             .OnDelete(DeleteBehavior.Cascade));
 
-            // Конфигурация связи один-ко-одному между User и FavoritesCollection (Collection)
+
             modelBuilder.Entity<User>()
                 .HasOne(u => u.FavoritesCollection)
                 .WithOne()
                 .HasForeignKey<User>(u => u.FavoritesCollectionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Конфигурация связи многие-ко-многим между User и LikedCollections (Collection)
+
             modelBuilder.Entity<User>()
                 .HasMany(u => u.LikedCollections)
                 .WithMany()

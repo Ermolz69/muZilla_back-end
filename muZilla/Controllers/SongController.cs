@@ -8,6 +8,7 @@ using muZilla.Application.DTOs.Song;
 using System.Security.Claims;
 using NAudio.Wave;
 using muZilla.ResponseRequestModels;
+using muZilla.Entities.Enums;
 
 
 namespace muZilla.Controllers
@@ -69,12 +70,12 @@ namespace muZilla.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateSongByIdAsync(int id, SongDTO songDTO)
         {
-            int resultCode = await _songService.UpdateSongByIdAsync(id, songDTO);
+            SongResultType resultCode = await _songService.UpdateSongByIdAsync(id, songDTO);
 
             return resultCode switch
             {
-                200 => Ok(),
-                404 => NotFound($"Song with ID {id} not found."),
+                SongResultType.Success => Ok(),
+                SongResultType.NotFound => NotFound($"Song with ID {id} not found."),
                 _ => StatusCode(500, "An unexpected error occurred.")
             };
         }
@@ -103,7 +104,7 @@ namespace muZilla.Controllers
         [HttpPost("publish")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Consumes("multipart/form-data")]
@@ -113,30 +114,28 @@ namespace muZilla.Controllers
                 return BadRequest(ModelState);
             }
 
-            var login = User.FindFirst(ClaimTypes.Name)?.Value;
-
-            if (login == null)
+            string? userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (userLogin == null)
             {
                 return Unauthorized();
             }
 
-            var receiverId = await _userService.GetIdByLoginAsync(login);
+            int? userId = await _userService.GetIdByLoginAsync(userLogin);
 
             TimeSpan duration;
             byte[] songBytes;
-
             string tempFilePath = Path.GetTempFileName();
 
             try
             {
-                using (var ms = new MemoryStream())
+                using (MemoryStream memoryStream = new MemoryStream())
                 {
-                    await request.Song.CopyToAsync(ms);
-                    songBytes = ms.ToArray();
+                    await request.Song.CopyToAsync(memoryStream);
+                    songBytes = memoryStream.ToArray();
                 }
 
                 await System.IO.File.WriteAllBytesAsync(tempFilePath, songBytes);
-
+               
                 using (var reader = new AudioFileReader(tempFilePath))
                 {
                     duration = reader.TotalTime;
@@ -146,7 +145,7 @@ namespace muZilla.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest($"Ошибка при обработке файла: {ex.Message}");
+                return BadRequest($"Exception during file producing: {ex.Message}");
             }
             finally
             {
@@ -158,7 +157,7 @@ namespace muZilla.Controllers
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Не удалось удалить временный файл: {ex.Message}");
+                        Console.WriteLine($"Exception on deleting temporary file: {ex.Message}");
                     }
                 }
             }
@@ -203,11 +202,11 @@ namespace muZilla.Controllers
                         "cover.jpg",
                         imageBytes);
 
-                    int imageId = await _imageService.CreateImageAsync(new ImageDTO { ImageFilePath = $"{login}/{id}/cover.jpg" });
+                    int imageId = await _imageService.CreateImageAsync(new ImageDTO { ImageFilePath = $"{userLogin}/{id}/cover.jpg" });
 
                     await _songService.UpdateCoverIdOnly(id, imageId);
                 } 
-            } // ник автора/id песни/ лимриксы mp3 и cover 
+            } // ник автора/id песни/ лириксы mp3 и cover 
             else
             {
                 var rootPath = Directory.GetCurrentDirectory();

@@ -73,7 +73,7 @@ namespace muZilla.Application.Services
         public async Task<bool> SendMessageFromSupporterAsync(string receiverLogin, int supporterId, string content)
         {
             User supporter = (await _userService.GetUserByIdAsync(supporterId))!;
-            try { _accessLevelService.EnsureThisUserCanManageSupports(supporter); }
+            try { _accessLevelService.EnsureUserCanManageSupports(supporter); }
             catch (Exception e) { Console.WriteLine(e); return false; }
 
             var message = new SupportMessage
@@ -118,7 +118,7 @@ namespace muZilla.Application.Services
         public async Task<SupportMessage?> GetOldestFreeRequestAsync(string login, int supporterId)
         {
             User supporter = (await _userService.GetUserByIdAsync(supporterId))!;
-            try { _accessLevelService.EnsureThisUserCanManageSupports(supporter); }
+            try { _accessLevelService.EnsureUserCanManageSupports(supporter); }
             catch (Exception e) { Console.WriteLine(e); return null; }
 
             SupportMessage? message = await _repository.GetAllAsync<SupportMessage>().Result
