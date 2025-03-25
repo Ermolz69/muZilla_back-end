@@ -168,7 +168,7 @@ namespace muZilla.Controllers
             if (id == -1)
                 return BadRequest();
 
-            await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
+            await _fileStorageService.AddSongRelatedFile(
                 main_author,
                 id,
                 "song.mp3",
@@ -181,7 +181,7 @@ namespace muZilla.Controllers
                     await request.Lyrics.CopyToAsync(lyricsStream);
                     byte[] lyricsBytes = lyricsStream.ToArray();
 
-                    await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
+                    await _fileStorageService.AddSongRelatedFile(
                         main_author,
                         id,
                         "lyrics.srt",
@@ -196,7 +196,7 @@ namespace muZilla.Controllers
                     await request.Image.CopyToAsync(imageStream);
                     byte[] imageBytes = imageStream.ToArray();
 
-                    await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
+                    await _fileStorageService.AddSongRelatedFile(
                         main_author,
                         id,
                         "cover.jpg",
@@ -219,7 +219,7 @@ namespace muZilla.Controllers
 
                 byte[] defaultImageBytes = await System.IO.File.ReadAllBytesAsync(filePath);
 
-                await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(
+                await _fileStorageService.AddSongRelatedFile(
                     main_author,
                     id,
                     "cover.jpg",

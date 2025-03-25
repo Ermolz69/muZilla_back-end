@@ -168,7 +168,7 @@ namespace muZilla.Application.Services
         /// <param name="login">The login of the user.</param>
         /// <param name="songId">The ID of the song for which the directory is being created.</param>
         /// <returns>An asynchronous task representing the directory creation operation.</returns>
-        public async Task CreateSongDirectoryInDirectoryAsync(string login, int songId)
+        public async Task CreateSongFolderAsync(string login, int songId)
         {
             ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(login);
 
@@ -187,7 +187,7 @@ namespace muZilla.Application.Services
         /// <param name="filename">The name of the file to create.</param>
         /// <param name="fileBytes">The byte array representing the file content.</param>
         /// <returns>An asynchronous task representing the file creation operation.</returns>
-        public async Task CreateFileInSongDirectoryInDirectoryAsync(string login, int songId, string filename, byte[] fileBytes)
+        public async Task AddSongRelatedFile(string login, int songId, string filename, MemoryStream fileBytes)
         {
             ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(login);
 

@@ -112,9 +112,8 @@ namespace muZilla.Controllers
 
                 using MemoryStream memoryStream = new MemoryStream();
                 await file.CopyToAsync(memoryStream);
-                byte[] fileBytes = memoryStream.ToArray();
 
-                await _fileStorageService.CreateFileInSongDirectoryInDirectoryAsync(userLogin, songId, file.FileName, fileBytes);
+                await _fileStorageService.AddSongRelatedFile(userLogin, songId, file.FileName, memoryStream);
 
                 return Ok("File uploaded successfully.");
             }
@@ -134,7 +133,7 @@ namespace muZilla.Controllers
         /// </summary>
         /// <param name="filename">The name of the file to download</param>
         /// <returns>The file as a downloadable stream</returns>
-        [Obsolete("use DownloadFileFromSong instead")]
+        [Obsolete("use DownloadFile instead")]
         [HttpGet("download")]
         [Authorize]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -177,9 +176,10 @@ namespace muZilla.Controllers
         /// <param name="fileType">The name of the file to download.</param>
         /// <returns>The file as a downloadable stream.</returns>
         [HttpGet("download-song-file/{songId}/{fileType}")]
+        [Authorize]
         [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> DownloadFileFromSong([FromRoute] int songId, SongFile fileType)
+        public async Task<IActionResult> DownloadFile([FromRoute] int songId, SongFile fileType)
         {
             var userLogin = User.FindFirst(ClaimTypes.Name)?.Value;
             if (userLogin == null)
